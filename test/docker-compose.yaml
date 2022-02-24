@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  database:
+    container_name: forum_db
+    image: "postgres"
+    env_file:
+      - database.env
+    ports:
+      - "8035:5432"
