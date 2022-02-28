@@ -5,12 +5,38 @@ import (
 	"net/http"
 )
 
+type ResponseErrorCode = uint8
+
+const (
+	// general
+	OK ResponseErrorCode = iota
+	SomethingWentWrong
+
+	// bundle
+	UsernameAndEmailAlreadyInUse
+
+	// email
+	EmailMissing
+	EmailInvalid
+	EmailAlreadyInUse
+
+	// username
+	UsernameMissing
+	UsernameInvalid
+	UsernameRequirementsNotMet
+	UsernameAlreadyInUse
+
+	// password
+	PasswordMissing
+	PasswordTooSmall
+)
+
 type JsonResponse struct {
-	Message string `json:"message"`
-	Data    any    `json:"data"`
+	Data      any               `json:"data"`
+	ErrorCode ResponseErrorCode `json:"errorCode"`
 }
 
-func RespondJson(writer http.ResponseWriter, status int, message string, data any) error {
+func RespondJson(writer http.ResponseWriter, status int, errorCode ResponseErrorCode, data any) error {
 	writer.WriteHeader(status)
-	return json.NewEncoder(writer).Encode(JsonResponse{Message: message, Data: data})
+	return json.NewEncoder(writer).Encode(JsonResponse{Data: data, ErrorCode: errorCode})
 }

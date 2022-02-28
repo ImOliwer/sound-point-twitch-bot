@@ -22,7 +22,7 @@ func (r *Application) startServer(address string) *http.Server {
 	server := &http.Server{Addr: address, Handler: router}
 
 	// add all handlers
-	router.Handle("POST", "/account/register", HandleRegistration)
+	router.Handle("POST", "/account/register", r.HandleRegistration)
 
 	// listen and serve
 	go func() { server.ListenAndServe() }()
