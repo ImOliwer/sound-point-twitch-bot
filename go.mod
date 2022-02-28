@@ -5,6 +5,7 @@ go 1.18
 require github.com/julienschmidt/httprouter v1.3.0
 
 require (
+	github.com/go-email-validator/go-email-validator v0.0.0-20220207181418-d47f8cfc6f25 // indirect
 	github.com/go-pg/zerochecker v0.2.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc // indirect
