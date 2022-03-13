@@ -1,19 +1,23 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	"github.com/go-pg/pg/v10"
-	"github.com/go-pg/pg/v10/orm"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/julienschmidt/httprouter"
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dialect/pgdialect"
 )
 
 type Application struct {
-	DbClient *pg.DB
+	DbClient *bun.DB
 	Settings *Settings
 }
 
@@ -49,12 +53,17 @@ func main() {
 	server := application.startServer(":3030")
 
 	// connect to the database and handle errors accordingly
-	connectOpts, connectOptsErr := pg.ParseURL(settings.PostgresURL)
-	if connectOptsErr != nil {
-		panic(connectOptsErr)
+	pgConfig, pgConfErr := pgx.ParseConfig(settings.PostgresURL)
+	if pgConfErr != nil {
+		panic("Postgres URL is invalid.")
 	}
 
-	dbClient := pg.Connect(connectOpts)
+	postgresDb := stdlib.OpenDB(*pgConfig)
+	if postgresDb == nil {
+		panic("Could not open connection to db.")
+	}
+
+	dbClient := bun.NewDB(postgresDb, pgdialect.New())
 	if dbClient == nil {
 		panic("Failed to connect to database.")
 	}
@@ -63,15 +72,37 @@ func main() {
 	defer dbClient.Close() // ensure the client is closed on shutdown
 
 	models := []interface{}{
+		(*UserToken)(nil),
 		(*User)(nil),
 	}
 
 	for _, model := range models {
-		err := dbClient.Model(model).CreateTable(&orm.CreateTableOptions{IfNotExists: true})
+		_, err := dbClient.NewCreateTable().Model(model).IfNotExists().Exec(context.Background())
 		if err != nil {
 			panic(err)
 		}
 	}
+
+	// create functions
+	dbClient.Exec(CreateTokenExpireFunction)
+
+	// signaling for shutdown
+	shutdown := make(chan os.Signal)
+
+	// token ticker
+	tokenTicker := time.NewTicker(10 * time.Minute)
+
+	go func() {
+		for {
+			select {
+			case <-tokenTicker.C:
+				dbClient.Exec(InvokeTokenExpireFunction)
+			case <-shutdown:
+				tokenTicker.Stop()
+				return
+			}
+		}
+	}()
 
 	// ensure the server termination is handled accordingly
 	defer func() {
@@ -81,7 +112,6 @@ func main() {
 	}()
 
 	// ensure an awaited channel
-	shutdown := make(chan os.Signal)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM, os.Interrupt)
 	<-shutdown
 

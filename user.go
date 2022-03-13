@@ -1,8 +1,13 @@
 package main
 
+import "github.com/golang-jwt/jwt"
+
 type User struct {
-	Id          string `pg:"id,nopk,notnull,unique,type:uuid,default:gen_random_uuid()"`
-	Email       string `pg:"email,nopk,notnull,unique"`
-	Name        string `pg:"username,nopk,notnull,unique"`
-	DisplayName string `pg:"displayName,nopk"`
+	tableName          struct{} `bun:"users" json:"-"`
+	jwt.StandardClaims `bun:"-" json:"tokenOpts"`
+	Id                 string `bun:"id,notnull,unique,type:uuid,default:gen_random_uuid()" json:"id"`
+	Email              string `bun:"email,notnull,unique" json:"email"`
+	Name               string `bun:"username,notnull,unique" json:"name"`
+	DisplayName        string `bun:"displayName" json:"displayName"`
+	Password           string `bun:"password,notnull" json:"-"`
 }

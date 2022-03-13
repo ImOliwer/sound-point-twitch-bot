@@ -14,6 +14,7 @@ const (
 
 	// bundle
 	UsernameAndEmailAlreadyInUse
+	UserFailedToCreate
 
 	// email
 	EmailMissing
@@ -29,6 +30,7 @@ const (
 	// password
 	PasswordMissing
 	PasswordTooSmall
+	PasswordFailedHash
 )
 
 type JsonResponse struct {

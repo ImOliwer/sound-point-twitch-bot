@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/mail"
@@ -9,10 +10,14 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-type TempRegistrationBody struct {
+type RegistrationProps struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type RegistrationSuccess struct {
+	User User `json:"profile"`
 }
 
 func (r *Application) HandleRegistration(
@@ -20,7 +25,7 @@ func (r *Application) HandleRegistration(
 	request *http.Request,
 	_ httprouter.Params,
 ) {
-	var requestBody TempRegistrationBody
+	var requestBody RegistrationProps
 	bodyErr := json.NewDecoder(request.Body).Decode(&requestBody)
 
 	if bodyErr != nil {
@@ -69,7 +74,7 @@ func (r *Application) HandleRegistration(
 
 	// ensure that username and email has not been taken already
 	userLookup := new(User)
-	r.DbClient.Model(userLookup).Where("email = ?", email).WhereOr("username = ?", username)
+	r.DbClient.NewSelect().Model(userLookup).Where("email = ?", email).WhereOr("username = ?", username)
 
 	if userLookup != nil {
 		if userLookup.Name == username && userLookup.Email == email {
@@ -100,4 +105,24 @@ func (r *Application) HandleRegistration(
 		RespondJson(response, http.StatusBadRequest, PasswordTooSmall, nil)
 		return
 	}
+
+	hashedPassword, hashErr := HashPassword(password)
+	if hashErr != nil {
+		RespondJson(response, http.StatusInternalServerError, PasswordFailedHash, nil)
+		return
+	}
+
+	user := User{
+		Email:    email,
+		Name:     username,
+		Password: hashedPassword,
+	}
+
+	_, insertionErr := r.DbClient.NewInsert().Model(&user).Exec(context.Background())
+	if insertionErr != nil {
+		RespondJson(response, http.StatusInternalServerError, UserFailedToCreate, nil)
+		return
+	}
+
+	RespondJson(response, http.StatusOK, OK, RegistrationSuccess{User: user})
 }
