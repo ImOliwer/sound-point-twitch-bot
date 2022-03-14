@@ -83,8 +83,16 @@ func main() {
 		}
 	}
 
-	// create functions
-	dbClient.Exec(CreateTokenExpireFunction)
+	// create functions & triggers
+	funcTrig := []string{
+		CreateTokenExpireFunction,
+		CreateDeleteTokensOnUserDeletionFunction,
+		CreateDeleteTokensOnUserDeletionTrigger,
+	}
+
+	for _, query := range funcTrig {
+		dbClient.Exec(query)
+	}
 
 	// signaling for shutdown
 	shutdown := make(chan os.Signal)

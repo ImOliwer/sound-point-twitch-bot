@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/golang-jwt/jwt"
@@ -42,14 +43,21 @@ func ComparePassword(hashed string, plain string) bool {
 	return err == nil
 }
 
-/*
-func (r *Application) tokenFor(user User) string {
+func (r *Application) TokenFor(user User) string {
 	token, err := r.GenerateJWT(user)
 
 	if err != nil {
 		return ""
 	}
 
+	_, insErr := r.DbClient.NewInsert().Model(&UserToken{
+		UserID: user.Id(),
+		Token:  token,
+	}).Exec(context.Background())
 
+	if insErr != nil {
+		return ""
+	}
+
+	return token
 }
-*/
