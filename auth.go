@@ -51,7 +51,7 @@ func (r *Application) TokenFor(user User) string {
 	}
 
 	_, insErr := r.DbClient.NewInsert().Model(&UserToken{
-		UserID: user.Id(),
+		UserID: user.ID,
 		Token:  token,
 	}).Exec(context.Background())
 
