@@ -1,5 +1,7 @@
-/secrets/*
-/forum
-/forum.exe
+# internal relation
+/*.exe
 /go.sum
+
+# external relation
 /settings.json
+/data.db
