@@ -32,7 +32,6 @@ func NewClient() Client {
 	return Client{
 		connection: nil,
 		channels:   map[string]bool{},
-		onMessage:  func(client *Client, state *TwitchMessageState) {},
 	}
 }
 
@@ -67,6 +66,10 @@ func (r *Client) Listen(app *app.Application) {
 			util.NewFormatableString("CAP REQ :%s %s %s", CAP_COMMANDS, CAP_TAGS, CAP_MEMBERSHIP),
 		},
 	)
+}
+
+func (r *Client) WithMessageHandler(handler func(client *Client, state *TwitchMessageState)) {
+	r.onMessage = handler
 }
 
 func (r *Client) Join(channel string) (bool, error) {
@@ -156,7 +159,12 @@ func (r *Client) handle_message(
 	}
 
 	if matches := privmsg_regex.FindStringSubmatch(data); len(matches) > 0 {
-		//messageState := twitch_irc.ProcessMessageState(matches)
+		messageState := ProcessMessageState(matches)
+		function := r.onMessage
+
+		if function != nil {
+			function(r, &messageState)
+		}
 		return
 	}
 }
