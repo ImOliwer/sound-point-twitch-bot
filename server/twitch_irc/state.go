@@ -43,9 +43,118 @@ const (
 	BADGE_BITS_CHARITY
 )
 
+var objectify_handlers = map[string]objectify_handler{
+	"id": func(value string) interface{} {
+		return uuid.MustParse(value)
+	},
+	"bits": func(value string) interface{} {
+		return util.Uint32(value)
+	},
+	"tmi-sent-ts": func(value string) interface{} {
+		return time.UnixMilli(util.Int64(value))
+	},
+	"mod": func(value string) interface{} {
+		return util.RequireBool(value)
+	},
+	"subscriber": func(value string) interface{} {
+		return util.RequireBool(value)
+	},
+	"turbo": func(value string) interface{} {
+		return util.RequireBool(value)
+	},
+	"user-type": func(value string) interface{} {
+		switch value {
+		case "admin":
+			return USER_ADMIN
+		case "global_mod":
+			return USER_GLOBAL_MOD
+		case "staff":
+			return USER_STAFF
+		case "mod":
+			return USER_MOD
+		default:
+			return USER_NORMAL
+		}
+	},
+	"badge-info": func(value string) interface{} {
+		badgeInformation := TwitchBadgeInformation{
+			Subscription:      0,
+			SubscriptionGifts: 0,
+		}
+
+		for badgeName, badgeValue := range split_raw(value) {
+			parsed := util.Uint32(badgeValue)
+			switch badgeName {
+			case "subscriber":
+				badgeInformation.Subscription = parsed
+				break
+			case "sub-gifter":
+				badgeInformation.SubscriptionGifts = parsed
+				break
+			}
+		}
+		return badgeInformation
+	},
+	"badges": func(value string) interface{} {
+		badgeList := TwitchBadgeList{single_versions: 0}
+		var singleVersions util.Flag
+
+		// handle
+		for badgeName, badgeValue := range split_raw(value) {
+			switch badgeName {
+			case "admin":
+				singleVersions.Append(BADGE_ADMIN)
+			case "staff":
+				singleVersions.Append(BADGE_STAFF)
+			case "moderator":
+				singleVersions.Append(BADGE_MODERATOR)
+			case "partner":
+				singleVersions.Append(BADGE_PARTNER)
+			case "turbo":
+				singleVersions.Append(BADGE_TURBO)
+			case "glhf-pledge":
+				singleVersions.Append(BADGE_GLHF_PLEDGE)
+			case "broadcaster":
+				singleVersions.Append(BADGE_BROADCASTER)
+			case "bits-charity":
+				singleVersions.Append(BADGE_BITS_CHARITY)
+			case "subscriber":
+				badgeList.Subscriber = util.Uint32(badgeValue)
+			case "bits":
+				badgeList.Bits = util.Uint32(badgeValue)
+			}
+		}
+
+		badgeList.single_versions = singleVersions
+		return badgeList
+	},
+	"emotes": func(value string) interface{} {
+		emotes := make([]TwitchEmote, 0)
+		if value != "" {
+			for _, raw := range strings.Split(value, "/") {
+				slice := strings.Split(raw, ":")
+				twitchEmote := TwitchEmote{Id: slice[0]}
+
+				positions := make([]TwitchEmotePosition, 0)
+				for _, rawPosition := range strings.Split(slice[1], ",") {
+					whole := strings.Split(rawPosition, "-")
+					positions = append(positions, TwitchEmotePosition{
+						StartPos: util.Uint16(whole[0]),
+						EndPos:   util.Uint16(whole[1]),
+					})
+				}
+
+				twitchEmote.Positions = positions
+				emotes = append(emotes, twitchEmote)
+			}
+		}
+		return emotes
+	},
+}
+
 type TwitchUserState struct {
-	BadgeInfo    *TwitchBadgeInformation
-	Badges       *TwitchBadgeList
+	BadgeInfo    TwitchBadgeInformation
+	Badges       TwitchBadgeList
 	Id           string
 	NameHexColor string
 	DisplayName  string
@@ -56,15 +165,15 @@ type TwitchUserState struct {
 }
 
 type TwitchMessageState struct {
-	User        *TwitchUserState
-	Notice      *TwitchNoticeState
-	Id          uuid.UUID
-	ChannelId   string
+	User        TwitchUserState `json:"user_state" link:"badge-info=BadgeInfo;badges=Badges;user-id=Id;color=NameHexColor;display-name=DisplayName;mod=IsModerator;subscriber=IsSubscriber;turbo=IsTurbo;user-type=Type"`
+	Notice      TwitchNoticeState
+	Id          uuid.UUID `json:"id"`
+	ChannelId   string    `json:"room-id"`
 	ChannelName string
 	Text        string
-	Emotes      []TwitchEmote
-	BitsCheered uint32
-	ReceivedAt  time.Time
+	Emotes      []TwitchEmote `json:"emotes"`
+	BitsCheered uint32        `json:"bits"`
+	ReceivedAt  time.Time     `json:"tmi-sent-ts"`
 }
 
 type TwitchNoticeState struct {
@@ -104,137 +213,12 @@ func (r *TwitchBadgeList) Is(flag util.Flag) bool {
 }
 
 func ProcessMessageState(data []string) TwitchMessageState {
-	userState := TwitchUserState{}
 	messageState := TwitchMessageState{
-		User:        &userState,
 		ChannelName: data[5],
 		Text:        data[6],
 	}
-
-	for _, entry := range strings.Split(data[1], ";") {
-		splitEntry := strings.Split(entry, "=")
-		key := splitEntry[0]
-		rawValue := splitEntry[1]
-
-		switch key {
-		case "@badge-info":
-			userState.BadgeInfo = parse_badge_info(rawValue)
-		case "badges":
-			userState.Badges = parse_badges(rawValue)
-		case "color":
-			userState.NameHexColor = rawValue
-		case "display-name":
-			userState.DisplayName = rawValue
-		case "mod":
-			userState.IsModerator = util.RequireBool(rawValue)
-		case "subscriber":
-			userState.IsSubscriber = util.RequireBool(rawValue)
-		case "turbo":
-			userState.IsTurbo = util.RequireBool(rawValue)
-		case "user-id":
-			userState.Id = rawValue
-		case "user-type":
-			switch rawValue {
-			case "admin":
-				userState.Type = USER_ADMIN
-			case "global_mod":
-				userState.Type = USER_GLOBAL_MOD
-			case "staff":
-				userState.Type = USER_STAFF
-			case "mod":
-				userState.Type = USER_MOD
-			default:
-				userState.Type = USER_NORMAL
-			}
-		case "bits":
-			messageState.BitsCheered = util.Uint32(rawValue)
-		case "room-id":
-			messageState.ChannelId = rawValue
-		case "emotes":
-			emotes := make([]TwitchEmote, 0)
-			if rawValue != "" {
-				// handle all emotes accordingly
-				for _, raw := range strings.Split(rawValue, "/") {
-					slice := strings.Split(raw, ":")
-					twitchEmote := TwitchEmote{Id: slice[0]}
-
-					// handle positions
-					positions := make([]TwitchEmotePosition, 0)
-					for _, rawPosition := range strings.Split(slice[1], ",") {
-						whole := strings.Split(rawPosition, "-")
-						positions = append(positions, TwitchEmotePosition{
-							StartPos: util.Uint16(whole[0]),
-							EndPos:   util.Uint16(whole[1]),
-						})
-					}
-
-					// append the emote
-					twitchEmote.Positions = positions
-					emotes = append(emotes, twitchEmote)
-				}
-			}
-			messageState.Emotes = emotes
-		case "id":
-			messageState.Id = uuid.MustParse(rawValue)
-		case "tmi-sent-ts":
-			messageState.ReceivedAt = time.UnixMilli(util.Int64(rawValue))
-		}
-	}
+	objectify_irc(data[1], &messageState, objectify_handlers)
 	return messageState
-}
-
-func parse_badge_info(value string) *TwitchBadgeInformation {
-	badgeInformation := TwitchBadgeInformation{
-		Subscription:      0,
-		SubscriptionGifts: 0,
-	}
-
-	for badgeName, badgeValue := range split_raw(value) {
-		parsed := util.Uint32(badgeValue)
-		switch badgeName {
-		case "subscriber":
-			badgeInformation.Subscription = parsed
-			break
-		case "sub-gifter":
-			badgeInformation.SubscriptionGifts = parsed
-			break
-		}
-	}
-	return &badgeInformation
-}
-
-func parse_badges(value string) *TwitchBadgeList {
-	badgeList := TwitchBadgeList{single_versions: 0}
-	var singleVersions util.Flag
-
-	// handle
-	for badgeName, badgeValue := range split_raw(value) {
-		switch badgeName {
-		case "admin":
-			singleVersions.Append(BADGE_ADMIN)
-		case "staff":
-			singleVersions.Append(BADGE_STAFF)
-		case "moderator":
-			singleVersions.Append(BADGE_MODERATOR)
-		case "partner":
-			singleVersions.Append(BADGE_PARTNER)
-		case "turbo":
-			singleVersions.Append(BADGE_TURBO)
-		case "glhf-pledge":
-			singleVersions.Append(BADGE_GLHF_PLEDGE)
-		case "broadcaster":
-			singleVersions.Append(BADGE_BROADCASTER)
-		case "bits-charity":
-			singleVersions.Append(BADGE_BITS_CHARITY)
-		case "subscriber":
-			badgeList.Subscriber = util.Uint32(badgeValue)
-		case "bits":
-			badgeList.Bits = util.Uint32(badgeValue)
-		}
-	}
-
-	badgeList.single_versions = singleVersions
-	return &badgeList
 }
 
 func split_raw(value string) map[string]string {

@@ -74,6 +74,9 @@ func main() {
 	// set up the irc
 	twitchIRC := twitch_irc.NewClient()
 	twitchIRC.Listen(&application)
+	twitchIRC.WithMessageHandler(func(client *twitch_irc.Client, state *twitch_irc.TwitchMessageState) {
+		log.Println(state)
+	})
 	twitchIRC.Join("icy_btww") // TODO: remove before production
 
 	// signal for shutdown
