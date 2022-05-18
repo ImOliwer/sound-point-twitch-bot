@@ -53,103 +53,13 @@ var objectify_handlers = map[string]objectify_handler{
 	"tmi-sent-ts": func(value string) interface{} {
 		return time.UnixMilli(util.Int64(value))
 	},
-	"mod": func(value string) interface{} {
-		return util.RequireBool(value)
-	},
-	"subscriber": func(value string) interface{} {
-		return util.RequireBool(value)
-	},
-	"turbo": func(value string) interface{} {
-		return util.RequireBool(value)
-	},
-	"user-type": func(value string) interface{} {
-		switch value {
-		case "admin":
-			return USER_ADMIN
-		case "global_mod":
-			return USER_GLOBAL_MOD
-		case "staff":
-			return USER_STAFF
-		case "mod":
-			return USER_MOD
-		default:
-			return USER_NORMAL
-		}
-	},
-	"badge-info": func(value string) interface{} {
-		badgeInformation := TwitchBadgeInformation{
-			Subscription:      0,
-			SubscriptionGifts: 0,
-		}
-
-		for badgeName, badgeValue := range split_raw(value) {
-			parsed := util.Uint32(badgeValue)
-			switch badgeName {
-			case "subscriber":
-				badgeInformation.Subscription = parsed
-				break
-			case "sub-gifter":
-				badgeInformation.SubscriptionGifts = parsed
-				break
-			}
-		}
-		return badgeInformation
-	},
-	"badges": func(value string) interface{} {
-		badgeList := TwitchBadgeList{single_versions: 0}
-		var singleVersions util.Flag
-
-		// handle
-		for badgeName, badgeValue := range split_raw(value) {
-			switch badgeName {
-			case "admin":
-				singleVersions.Append(BADGE_ADMIN)
-			case "staff":
-				singleVersions.Append(BADGE_STAFF)
-			case "moderator":
-				singleVersions.Append(BADGE_MODERATOR)
-			case "partner":
-				singleVersions.Append(BADGE_PARTNER)
-			case "turbo":
-				singleVersions.Append(BADGE_TURBO)
-			case "glhf-pledge":
-				singleVersions.Append(BADGE_GLHF_PLEDGE)
-			case "broadcaster":
-				singleVersions.Append(BADGE_BROADCASTER)
-			case "bits-charity":
-				singleVersions.Append(BADGE_BITS_CHARITY)
-			case "subscriber":
-				badgeList.Subscriber = util.Uint32(badgeValue)
-			case "bits":
-				badgeList.Bits = util.Uint32(badgeValue)
-			}
-		}
-
-		badgeList.single_versions = singleVersions
-		return badgeList
-	},
-	"emotes": func(value string) interface{} {
-		emotes := make([]TwitchEmote, 0)
-		if value != "" {
-			for _, raw := range strings.Split(value, "/") {
-				slice := strings.Split(raw, ":")
-				twitchEmote := TwitchEmote{Id: slice[0]}
-
-				positions := make([]TwitchEmotePosition, 0)
-				for _, rawPosition := range strings.Split(slice[1], ",") {
-					whole := strings.Split(rawPosition, "-")
-					positions = append(positions, TwitchEmotePosition{
-						StartPos: util.Uint16(whole[0]),
-						EndPos:   util.Uint16(whole[1]),
-					})
-				}
-
-				twitchEmote.Positions = positions
-				emotes = append(emotes, twitchEmote)
-			}
-		}
-		return emotes
-	},
+	"mod":        require_bool_handler,
+	"subscriber": require_bool_handler,
+	"turbo":      require_bool_handler,
+	"user-type":  user_type_handler,
+	"badge-info": badge_info_handler,
+	"badges":     badges_handler,
+	"emotes":     emotes_handler,
 }
 
 type TwitchUserState struct {
