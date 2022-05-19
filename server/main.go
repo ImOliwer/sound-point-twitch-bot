@@ -74,8 +74,11 @@ func main() {
 	// set up the irc
 	twitchIRC := twitch_irc.NewClient()
 	twitchIRC.Listen(&application)
-	twitchIRC.WithMessageHandler(func(client *twitch_irc.Client, state *twitch_irc.TwitchMessageState) {
-		log.Println(state)
+	twitchIRC.WithHandler("message", func(client *twitch_irc.Client, state *twitch_irc.TwitchMessageState) {
+		log.Println("CHAT:", state)
+	})
+	twitchIRC.WithHandler("notice", func(client *twitch_irc.Client, state *twitch_irc.TwitchMessageState) {
+		log.Println("NOTICE:", state)
 	})
 	twitchIRC.Join("imoliwer") // TODO: remove before production
 

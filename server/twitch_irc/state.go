@@ -167,13 +167,27 @@ func (r *TwitchMessageState) IsNotice() bool {
 	return r.Notice.Type > 0
 }
 
-func ProcessMessageState(data []string) TwitchMessageState {
+func ProcessMessageState(data []string, t string) TwitchMessageState {
 	messageState := TwitchMessageState{
-		ChannelName: data[5],
-		Text:        data[6],
+		ChannelName: state_channel_name(data, t),
+		Text:        state_text(data, t),
 	}
 	objectify_irc(data[1], &messageState, objectify_handlers)
 	return messageState
+}
+
+func state_channel_name(data []string, t string) string {
+	if t == "PRIVMSG" {
+		return data[5]
+	}
+	return data[2] // USERNOTICE
+}
+
+func state_text(data []string, t string) string {
+	if t == "PRIVMSG" {
+		return data[6]
+	}
+	return data[4] // USERNOTICE
 }
 
 func split_raw(value string) map[string]string {

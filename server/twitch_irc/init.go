@@ -21,11 +21,13 @@ const (
 var client_join_regex *regexp.Regexp
 var client_part_regex *regexp.Regexp
 var privmsg_regex = *regexp.MustCompile(`(?m)^(.+):(.+)!(.+)@(.+)\.tmi\.twitch\.tv PRIVMSG #(.+) :(.+)$`)
+var noticemsg_regex = *regexp.MustCompile(`(?m)^(.+):tmi\.twitch\.tv USERNOTICE #(.+)(?:(:(.*)))$`)
 
 type Client struct {
 	connection *websocket.Conn
 	channels   map[string]bool
 	onMessage  func(client *Client, state *TwitchMessageState)
+	onNotice   func(client *Client, state *TwitchMessageState)
 }
 
 func NewClient() Client {
@@ -68,8 +70,13 @@ func (r *Client) Listen(app *app.Application) {
 	)
 }
 
-func (r *Client) WithMessageHandler(handler func(client *Client, state *TwitchMessageState)) {
-	r.onMessage = handler
+func (r *Client) WithHandler(id string, handler func(client *Client, state *TwitchMessageState)) {
+	switch id {
+	case "message":
+		r.onMessage = handler
+	case "notice":
+		r.onNotice = handler
+	}
 }
 
 func (r *Client) Join(channel string) (bool, error) {
@@ -154,12 +161,19 @@ func (r *Client) handle_message(
 	}
 
 	if matches := privmsg_regex.FindStringSubmatch(data); len(matches) > 0 {
-		messageState := ProcessMessageState(matches)
-		function := r.onMessage
-
-		if function != nil {
-			function(r, &messageState)
-		}
+		state := ProcessMessageState(matches, "PRIVMSG")
+		r.call_if_present(r.onMessage, &state)
 		return
+	}
+
+	if matches := noticemsg_regex.FindStringSubmatch(data); len(matches) > 0 {
+		state := ProcessMessageState(matches, "USERNOTICE")
+		r.call_if_present(r.onNotice, &state)
+	}
+}
+
+func (r *Client) call_if_present(handler func(client *Client, state *TwitchMessageState), state *TwitchMessageState) {
+	if handler != nil {
+		handler(r, state)
 	}
 }
