@@ -9,10 +9,11 @@ import (
 )
 
 type TwitchNoticeType = uint8
+type TwitchSubscriptionTier = uint8
 type TwitchUserType = uint8
 
 const (
-	NOTICE_SUB TwitchNoticeType = iota
+	NOTICE_SUB TwitchNoticeType = iota + 1
 	NOTICE_SUB_GIFT
 	NOTICE_RESUB
 	NOTICE_GIFT_PAID_UPGRADE
@@ -22,6 +23,13 @@ const (
 	NOTICE_UNRAID
 	NOTICE_RITUAL
 	NOTICE_BITS_BADGE_TIER
+)
+
+const (
+	TIER_PRIME TwitchSubscriptionTier = iota + 1
+	TIER_1
+	TIER_2
+	TIER_3
 )
 
 const (
@@ -53,46 +61,79 @@ var objectify_handlers = map[string]objectify_handler{
 	"tmi-sent-ts": func(value string) interface{} {
 		return time.UnixMilli(util.Int64(value))
 	},
-	"mod":        require_bool_handler,
-	"subscriber": require_bool_handler,
-	"turbo":      require_bool_handler,
-	"user-type":  user_type_handler,
-	"badge-info": badge_info_handler,
-	"badges":     badges_handler,
-	"emotes":     emotes_handler,
+	"mod":                         require_bool_handler,
+	"subscriber":                  require_bool_handler,
+	"turbo":                       require_bool_handler,
+	"first-msg":                   require_bool_handler,
+	"user-type":                   user_type_handler,
+	"badge-info":                  badge_info_handler,
+	"badges":                      badges_handler,
+	"emotes":                      emotes_handler,
+	"msg-id":                      notice_type_handler,
+	"msg-param-cumulative-months": require_uint16,
+	"msg-param-streak-months":     require_uint16,
+	"msg-param-months":            require_uint16,
+	"msg-param-sub-plan":          require_uint8,
 }
 
 type TwitchUserState struct {
-	BadgeInfo    TwitchBadgeInformation
-	Badges       TwitchBadgeList
-	Id           string
-	NameHexColor string
-	DisplayName  string
-	IsModerator  bool
-	IsSubscriber bool
-	IsTurbo      bool
-	Type         TwitchUserType
+	BadgeInfo    TwitchBadgeInformation `json:"badge_info"`
+	Badges       TwitchBadgeList        `json:"badges"`
+	Id           string                 `json:"user-id"`
+	NameHexColor string                 `json:"color"`
+	DisplayName  string                 `json:"display-name"`
+	IsModerator  bool                   `json:"mod"`
+	IsSubscriber bool                   `json:"subscriber"`
+	IsTurbo      bool                   `json:"turbo"`
+	Type         TwitchUserType         `json:"user-type"`
+}
+
+type TwitchReplyState struct {
+	Id              string `json:"reply-parent-msg-id"`
+	UserId          string `json:"reply-parent-user-id"`
+	UserLogin       string `json:"reply-parent-user-login"`
+	UserDisplayName string `json:"reply-parent-display-name"`
+	Text            string `json:"reply-parent-msg-body"`
 }
 
 type TwitchMessageState struct {
-	User        TwitchUserState `json:"user_state" link:"badge-info=BadgeInfo;badges=Badges;user-id=Id;color=NameHexColor;display-name=DisplayName;mod=IsModerator;subscriber=IsSubscriber;turbo=IsTurbo;user-type=Type"`
-	Notice      TwitchNoticeState
-	Id          uuid.UUID `json:"id"`
-	ChannelId   string    `json:"room-id"`
-	ChannelName string
-	Text        string
-	Emotes      []TwitchEmote `json:"emotes"`
-	BitsCheered uint32        `json:"bits"`
-	ReceivedAt  time.Time     `json:"tmi-sent-ts"`
+	User           TwitchUserState   `json:"user_state" twitchObj:"true"`
+	Reply          TwitchReplyState  `json:"reply_state" twitchObj:"true"`
+	Notice         TwitchNoticeState `json:"notice_state" twitchObj:"true"`
+	Id             uuid.UUID         `json:"id"`
+	ChannelId      string            `json:"room-id"`
+	ChannelName    string
+	Text           string
+	IsFirstMessage bool          `json:"first-msg"`
+	Emotes         []TwitchEmote `json:"emotes"`
+	BitsCheered    uint32        `json:"bits"`
+	ReceivedAt     time.Time     `json:"tmi-sent-ts"`
+}
+
+type TwitchSubscriptionState struct {
+	CumulativeMonths uint16                 `json:"msg-param-cumulative-months"`
+	ShareStreak      bool                   `json:"msg-param-should-share-streak"`
+	StreakMonths     uint16                 `json:"msg-param-streak-months"`
+	Tier             TwitchSubscriptionTier `json:"msg-param-sub-plan"`
+	TierName         string                 `json:"msg-param-sub-plan-name"`
+}
+
+type TwitchSubGiftState struct {
+	Months      uint16                 `json:"msg-param-months"`
+	UserName    string                 `json:"msg-param-recipient-user-name"`
+	DisplayName string                 `json:"msg-param-recipient-display-name"`
+	Id          string                 `json:"msg-param-recipient-id"`
+	Tier        TwitchSubscriptionTier `json:"msg-param-sub-plan"`
+	TierName    string                 `json:"msg-param-sub-plan-name"`
+	GiftMonths  uint16                 `json:"msg-param-gift-months"`
 }
 
 type TwitchNoticeState struct {
-	SystemMessage  string
-	MessageId      string
-	LoginName      string
-	TargetUserId   string
-	IsFirstMessage bool
-	Type           TwitchNoticeType
+	SystemMessage    string                  `json:"system-mg"`
+	Login            string                  `json:"login"`
+	Subscription     TwitchSubscriptionState `json:"subscription" twitchObj:"true"`
+	SubscriptionGift TwitchSubGiftState      `json:"subscription_gift" twitchObj:"true"`
+	Type             TwitchNoticeType        `json:"msg-id"`
 }
 
 type TwitchBadgeInformation struct {
@@ -120,6 +161,10 @@ type TwitchEmotePosition struct {
 
 func (r *TwitchBadgeList) Is(flag util.Flag) bool {
 	return r.single_versions.Has(flag)
+}
+
+func (r *TwitchMessageState) IsNotice() bool {
+	return r.Notice.Type > 0
 }
 
 func ProcessMessageState(data []string) TwitchMessageState {

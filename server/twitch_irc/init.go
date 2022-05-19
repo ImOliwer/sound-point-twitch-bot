@@ -143,11 +143,6 @@ func (r *Client) handle_message(
 	connection *websocket.Conn,
 	data string,
 ) {
-	// check out redemptions (USERNOTICE) etc etc...
-	log.Println("-----------------------")
-	log.Println(data)
-	log.Println("-----------------------")
-
 	if matches := client_join_regex.FindStringSubmatch(data); len(matches) > 0 {
 		log.Println(fmt.Sprintf("Joined channel >> %[1]s", matches[1]))
 		return

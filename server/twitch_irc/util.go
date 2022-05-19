@@ -47,40 +47,41 @@ func objectify_irc(twitchIrcMessage string, toPtr interface{}, handlers map[stri
 	}
 
 	indirect := reflect.Indirect(reflect.ValueOf(toPtr))
-	indirectType := indirect.Type()
 	var data map[string]string
 
 	rawJson, _ := twitch_msg_to_json(twitchIrcMessage)
 	json.Unmarshal([]byte(rawJson), &data)
 
-	for index := 0; index < indirectType.NumField(); index++ {
-		field := indirectType.Field(index)
-		linkedTo, isLinked := field.Tag.Lookup("link")
-		valueField := indirect.Field(index)
+	handle_prop(data, handlers, indirect)
+	return nil
+}
 
-		if !isLinked {
-			tag := field.Tag.Get("json")
+func handle_prop(data map[string]string, handlers map[string]objectify_handler, value reflect.Value) {
+	baseType := value.Type()
+	for index := 0; index < value.NumField(); index++ {
+		valueField := value.Field(index)
+		structField := baseType.Field(index)
+
+		if it, ok := structField.Tag.Lookup("twitchObj"); !ok || it != "true" {
+			tag := structField.Tag.Get("json")
 			if tag == "" {
 				continue
 			}
-			value := value_with_handler(tag, data[tag], handlers)
+
+			rawData, ok := data[tag]
+			if !ok || rawData == "" {
+				continue
+			}
+
+			value := value_with_handler(tag, rawData, handlers)
 			valueField.Set(reflect.ValueOf(value))
 			continue
 		}
 
-		newValue := reflect.New(field.Type).Elem()
-		for _, rawLink := range strings.Split(linkedTo, ";") {
-			linkSplit := strings.Split(rawLink, "=")
-			linkJsonTag := linkSplit[0]
-			linkField := linkSplit[1]
-			value := value_with_handler(linkJsonTag, data[linkJsonTag], handlers)
-			field := newValue.FieldByName(linkField)
-			field.Set(reflect.ValueOf(value))
-		}
-
+		newValue := reflect.New(structField.Type).Elem()
+		handle_prop(data, handlers, newValue)
 		valueField.Set(newValue)
 	}
-	return nil
 }
 
 func value_with_handler(tag string, data string, handlers map[string]objectify_handler) interface{} {

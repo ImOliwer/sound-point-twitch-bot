@@ -77,7 +77,7 @@ func main() {
 	twitchIRC.WithMessageHandler(func(client *twitch_irc.Client, state *twitch_irc.TwitchMessageState) {
 		log.Println(state)
 	})
-	twitchIRC.Join("icy_btww") // TODO: remove before production
+	twitchIRC.Join("imoliwer") // TODO: remove before production
 
 	// signal for shutdown
 	shutdown := make(chan os.Signal)

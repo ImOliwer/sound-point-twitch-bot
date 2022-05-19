@@ -1,6 +1,7 @@
 package twitch_irc
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/imoliwer/sound-point-twitch-bot/server/util"
@@ -8,7 +9,27 @@ import (
 
 // transform 0->1 through false->true
 func require_bool_handler(value string) interface{} {
+	if value == "" {
+		return false
+	}
 	return util.RequireBool(value)
+}
+
+// convert string into uint16
+func require_uint16(value string) interface{} {
+	if value == "" {
+		return 0
+	}
+	return util.Uint16(value)
+}
+
+// convert string into uint8
+func require_uint8(value string) interface{} {
+	it, err := strconv.ParseUint(value, 10, 8)
+	if err != nil {
+		return 0
+	}
+	return uint8(it)
 }
 
 // get user type by string
@@ -24,6 +45,32 @@ func user_type_handler(value string) interface{} {
 		return USER_MOD
 	default:
 		return USER_NORMAL
+	}
+}
+
+// fetch the exact notice type by value
+func notice_type_handler(value string) interface{} {
+	switch value {
+	case "sub":
+		return NOTICE_SUB
+	case "resub":
+		return NOTICE_RESUB
+	case "subgift":
+		return NOTICE_SUB_GIFT
+	case "giftpaidupgrade":
+		return NOTICE_GIFT_PAID_UPGRADE
+	case "rewardgift":
+		return NOTICE_REWARD_GIFT
+	case "anongiftpaidupgrade":
+		return NOTICE_ANON_GIFT_PAID_UPGRADE
+	case "raid":
+		return NOTICE_RAID
+	case "unraid":
+		return NOTICE_UNRAID
+	case "bitsbadgetier":
+		return NOTICE_BITS_BADGE_TIER
+	default:
+		return NOTICE_RITUAL
 	}
 }
 
