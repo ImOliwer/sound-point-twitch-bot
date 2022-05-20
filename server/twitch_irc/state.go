@@ -61,19 +61,21 @@ var objectify_handlers = map[string]objectify_handler{
 	"tmi-sent-ts": func(value string) interface{} {
 		return time.UnixMilli(util.Int64(value))
 	},
-	"mod":                         require_bool_handler,
-	"subscriber":                  require_bool_handler,
-	"turbo":                       require_bool_handler,
-	"first-msg":                   require_bool_handler,
-	"user-type":                   user_type_handler,
-	"badge-info":                  badge_info_handler,
-	"badges":                      badges_handler,
-	"emotes":                      emotes_handler,
-	"msg-id":                      notice_type_handler,
-	"msg-param-cumulative-months": require_uint16,
-	"msg-param-streak-months":     require_uint16,
-	"msg-param-months":            require_uint16,
-	"msg-param-sub-plan":          require_uint8,
+	"mod":                           bool_handler,
+	"subscriber":                    bool_handler,
+	"turbo":                         bool_handler,
+	"first-msg":                     bool_handler,
+	"user-type":                     user_type_handler,
+	"badge-info":                    badge_info_handler,
+	"badges":                        badges_handler,
+	"emotes":                        emotes_handler,
+	"msg-id":                        notice_type_handler,
+	"msg-param-cumulative-months":   uint16_handler,
+	"msg-param-should-share-streak": bool_handler,
+	"msg-param-streak-months":       uint16_handler,
+	"msg-param-months":              uint16_handler,
+	"msg-param-sub-plan":            sub_plan_handler,
+	"msg-param-viewerCount":         uint16_handler,
 }
 
 type TwitchUserState struct {
@@ -128,11 +130,18 @@ type TwitchSubGiftState struct {
 	GiftMonths  uint16                 `json:"msg-param-gift-months"`
 }
 
+type TwitchRaidState struct {
+	DisplayName string `json:"msg-param-displayName"`
+	Login       string `json:"msg-param-login"`
+	ViewerCount uint32 `json:"msg-param-viewerCount"`
+}
+
 type TwitchNoticeState struct {
 	SystemMessage    string                  `json:"system-mg"`
 	Login            string                  `json:"login"`
 	Subscription     TwitchSubscriptionState `json:"subscription" twitchObj:"true"`
 	SubscriptionGift TwitchSubGiftState      `json:"subscription_gift" twitchObj:"true"`
+	Raid             TwitchRaidState         `json:"raid" twitchObj:"true"`
 	Type             TwitchNoticeType        `json:"msg-id"`
 }
 

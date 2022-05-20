@@ -50,7 +50,11 @@ func objectify_irc(twitchIrcMessage string, toPtr interface{}, handlers map[stri
 	var data map[string]string
 
 	rawJson, _ := twitch_msg_to_json(twitchIrcMessage)
-	json.Unmarshal([]byte(rawJson), &data)
+	err := json.Unmarshal([]byte(strings.ReplaceAll(rawJson, "\\s", " ")), &data)
+
+	if err != nil {
+		panic(err)
+	}
 
 	handle_prop(data, handlers, indirect)
 	return nil

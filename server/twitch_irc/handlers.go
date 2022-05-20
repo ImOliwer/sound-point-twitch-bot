@@ -1,14 +1,13 @@
 package twitch_irc
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/imoliwer/sound-point-twitch-bot/server/util"
 )
 
 // transform 0->1 through false->true
-func require_bool_handler(value string) interface{} {
+func bool_handler(value string) interface{} {
 	if value == "" {
 		return false
 	}
@@ -16,20 +15,27 @@ func require_bool_handler(value string) interface{} {
 }
 
 // convert string into uint16
-func require_uint16(value string) interface{} {
+func uint16_handler(value string) interface{} {
 	if value == "" {
 		return 0
 	}
 	return util.Uint16(value)
 }
 
-// convert string into uint8
-func require_uint8(value string) interface{} {
-	it, err := strconv.ParseUint(value, 10, 8)
-	if err != nil {
-		return 0
+// convert string into a sub plan
+func sub_plan_handler(value string) interface{} {
+	switch value {
+	case "Prime":
+		return TIER_PRIME
+	case "1000":
+		return TIER_1
+	case "2000":
+		return TIER_2
+	case "3000":
+		return TIER_3
+	default:
+		return uint8(0)
 	}
-	return uint8(it)
 }
 
 // get user type by string
