@@ -72,15 +72,13 @@ func main() {
 	}
 
 	// set up the irc
+	channelToJoin := settings.Bot.Channel
+	if channelToJoin == "" {
+		panic("Invalid channel name in settings.")
+	}
 	twitchIRC := twitch_irc.NewClient()
 	twitchIRC.Listen(&application)
-	//twitchIRC.WithHandler("message", func(client *twitch_irc.Client, state *twitch_irc.TwitchMessageState) {
-	//og.Println("CHAT:", state)
-	//})
-	twitchIRC.WithHandler("notice", func(client *twitch_irc.Client, state *twitch_irc.TwitchMessageState) {
-		log.Println("NOTICE:", state.Notice.Subscription) // TODO: TRY THIS FUNCTIONALITY
-	})
-	twitchIRC.Join("xqc") // TODO: remove before production
+	twitchIRC.Join(channelToJoin)
 
 	// signal for shutdown
 	shutdown := make(chan os.Signal)

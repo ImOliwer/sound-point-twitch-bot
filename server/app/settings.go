@@ -12,6 +12,7 @@ import (
 type BotSettings struct {
 	Name      string `json:"name"`
 	AuthToken string `json:"auth_token"`
+	Channel   string `json:"channel_to_join"`
 }
 
 type Settings struct {
@@ -32,7 +33,8 @@ func ReadSettings() *Settings {
 		settingsContent = []byte(`{
   "bot": {
 		"name": "bot_name_here",
-		"auth_token": "bot_auth_token_here"
+		"auth_token": "bot_auth_token_here",
+		"channel_to_join": "<your_channel_name>"
 	}
 }`)
 		created.Write(settingsContent)
