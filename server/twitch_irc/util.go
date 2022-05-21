@@ -11,13 +11,12 @@ import (
 type objectify_handler = func(string) interface{}
 
 func twitch_msg_to_json(twitchMsg string) (string, error) {
-	length := len(twitchMsg)
-	if length <= 1 {
+	if len(twitchMsg) <= 1 {
 		return "", errors.New("invalid twitch message")
 	}
 
 	if twitchMsg[0] == '@' {
-		twitchMsg = twitchMsg[1:length]
+		twitchMsg = twitchMsg[1:]
 	}
 
 	builder := strings.Builder{}

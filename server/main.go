@@ -80,6 +80,8 @@ func main() {
 	twitchIRC.Listen(&application)
 	twitchIRC.Join(channelToJoin)
 
+	//TODO: set up the handling of commands
+
 	// signal for shutdown
 	shutdown := make(chan os.Signal)
 

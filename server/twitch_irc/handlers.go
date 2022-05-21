@@ -82,7 +82,7 @@ func notice_type_handler(value string) interface{} {
 
 // convert all badge information from raw string
 func badge_info_handler(value string) interface{} {
-	badgeInformation := TwitchBadgeInformation{
+	badgeInformation := BadgeInformation{
 		Subscription:      0,
 		SubscriptionGifts: 0,
 	}
@@ -103,7 +103,7 @@ func badge_info_handler(value string) interface{} {
 
 // convert all badges in a string
 func badges_handler(value string) interface{} {
-	badgeList := TwitchBadgeList{single_versions: 0}
+	badgeList := BadgeList{single_versions: 0}
 	var singleVersions util.Flag
 
 	// handle
@@ -138,16 +138,16 @@ func badges_handler(value string) interface{} {
 
 // convert all the emote positions accordingly from raw value
 func emotes_handler(value string) interface{} {
-	emotes := make([]TwitchEmote, 0)
+	emotes := make([]Emote, 0)
 	if value != "" {
 		for _, raw := range strings.Split(value, "/") {
 			slice := strings.Split(raw, ":")
-			twitchEmote := TwitchEmote{Id: slice[0]}
+			twitchEmote := Emote{Id: slice[0]}
 
-			positions := make([]TwitchEmotePosition, 0)
+			positions := make([]EmotePosition, 0)
 			for _, rawPosition := range strings.Split(slice[1], ",") {
 				whole := strings.Split(rawPosition, "-")
-				positions = append(positions, TwitchEmotePosition{
+				positions = append(positions, EmotePosition{
 					StartPos: util.Uint16(whole[0]),
 					EndPos:   util.Uint16(whole[1]),
 				})

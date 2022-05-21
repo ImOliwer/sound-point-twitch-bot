@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"log"
 
 	"golang.org/x/net/websocket"
 )
@@ -28,4 +29,8 @@ func SendMultipleString(connection *websocket.Conn, formatables []FormatableStri
 
 func SendString(connection *websocket.Conn, data string, args ...any) {
 	websocket.Message.Send(connection, fmt.Sprintf(data, args...))
+}
+
+func Log(prefix string, message string, args ...any) {
+	log.Printf("%s >> %s", prefix, fmt.Sprintf(message, args...))
 }
