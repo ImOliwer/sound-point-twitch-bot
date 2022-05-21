@@ -26,13 +26,13 @@ func uint16_handler(value string) interface{} {
 func sub_plan_handler(value string) interface{} {
 	switch value {
 	case "Prime":
-		return TIER_PRIME
+		return TierPrime
 	case "1000":
-		return TIER_1
+		return Tier1
 	case "2000":
-		return TIER_2
+		return Tier2
 	case "3000":
-		return TIER_3
+		return Tier3
 	default:
 		return uint8(0)
 	}
@@ -42,15 +42,15 @@ func sub_plan_handler(value string) interface{} {
 func user_type_handler(value string) interface{} {
 	switch value {
 	case "admin":
-		return USER_ADMIN
+		return UserAdmin
 	case "global_mod":
-		return USER_GLOBAL_MOD
+		return UserGlobalMod
 	case "staff":
-		return USER_STAFF
+		return UserStaff
 	case "mod":
-		return USER_MOD
+		return UserMod
 	default:
-		return USER_NORMAL
+		return UserNormal
 	}
 }
 
@@ -58,25 +58,25 @@ func user_type_handler(value string) interface{} {
 func notice_type_handler(value string) interface{} {
 	switch value {
 	case "sub":
-		return NOTICE_SUB
+		return NoticeSub
 	case "resub":
-		return NOTICE_RESUB
+		return NoticeResub
 	case "subgift":
-		return NOTICE_SUB_GIFT
+		return NoticeSubGift
 	case "giftpaidupgrade":
-		return NOTICE_GIFT_PAID_UPGRADE
+		return NoticeGiftPaidUpgrade
 	case "rewardgift":
-		return NOTICE_REWARD_GIFT
+		return NoticeRewardGift
 	case "anongiftpaidupgrade":
-		return NOTICE_ANON_GIFT_PAID_UPGRADE
+		return NoticeAnonGiftPaidUpgrade
 	case "raid":
-		return NOTICE_RAID
+		return NoticeRaid
 	case "unraid":
-		return NOTICE_UNRAID
+		return NoticeUnraid
 	case "bitsbadgetier":
-		return NOTICE_BITS_BADGE_TIER
+		return NoticeBitsBadgeTier
 	default:
-		return NOTICE_RITUAL
+		return NoticeRitual
 	}
 }
 
@@ -110,21 +110,21 @@ func badges_handler(value string) interface{} {
 	for badgeName, badgeValue := range split_raw(value) {
 		switch badgeName {
 		case "admin":
-			singleVersions.Append(BADGE_ADMIN)
+			singleVersions.Append(BadgeAdmin)
 		case "staff":
-			singleVersions.Append(BADGE_STAFF)
+			singleVersions.Append(BadgeStaff)
 		case "moderator":
-			singleVersions.Append(BADGE_MODERATOR)
+			singleVersions.Append(BadgeModerator)
 		case "partner":
-			singleVersions.Append(BADGE_PARTNER)
+			singleVersions.Append(BadgePartner)
 		case "turbo":
-			singleVersions.Append(BADGE_TURBO)
+			singleVersions.Append(BadgeTurbo)
 		case "glhf-pledge":
-			singleVersions.Append(BADGE_GLHF_PLEDGE)
+			singleVersions.Append(BadgeGlhfPledge)
 		case "broadcaster":
-			singleVersions.Append(BADGE_BROADCASTER)
+			singleVersions.Append(BadgeBroadcaster)
 		case "bits-charity":
-			singleVersions.Append(BADGE_BITS_CHARITY)
+			singleVersions.Append(BadgeBitsCharity)
 		case "subscriber":
 			badgeList.Subscriber = util.Uint32(badgeValue)
 		case "bits":

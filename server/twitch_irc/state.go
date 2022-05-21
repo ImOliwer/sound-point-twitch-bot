@@ -13,42 +13,42 @@ type SubscriptionTier = uint8
 type UserType = uint8
 
 const (
-	NOTICE_SUB NoticeType = iota + 1
-	NOTICE_SUB_GIFT
-	NOTICE_RESUB
-	NOTICE_GIFT_PAID_UPGRADE
-	NOTICE_ANON_GIFT_PAID_UPGRADE
-	NOTICE_REWARD_GIFT
-	NOTICE_RAID
-	NOTICE_UNRAID
-	NOTICE_RITUAL
-	NOTICE_BITS_BADGE_TIER
+	NoticeSub NoticeType = iota + 1
+	NoticeSubGift
+	NoticeResub
+	NoticeGiftPaidUpgrade
+	NoticeAnonGiftPaidUpgrade
+	NoticeRewardGift
+	NoticeRaid
+	NoticeUnraid
+	NoticeRitual
+	NoticeBitsBadgeTier
 )
 
 const (
-	TIER_PRIME SubscriptionTier = iota + 1
-	TIER_1
-	TIER_2
-	TIER_3
+	TierPrime SubscriptionTier = iota + 1
+	Tier1
+	Tier2
+	Tier3
 )
 
 const (
-	USER_NORMAL UserType = iota
-	USER_MOD
-	USER_ADMIN
-	USER_GLOBAL_MOD
-	USER_STAFF
+	UserNormal UserType = iota
+	UserMod
+	UserAdmin
+	UserGlobalMod
+	UserStaff
 )
 
 const (
-	BADGE_ADMIN util.Flag = 1 << iota
-	BADGE_STAFF
-	BADGE_MODERATOR
-	BADGE_PARTNER
-	BADGE_TURBO
-	BADGE_GLHF_PLEDGE
-	BADGE_BROADCASTER
-	BADGE_BITS_CHARITY
+	BadgeAdmin util.Flag = 1 << iota
+	BadgeStaff
+	BadgeModerator
+	BadgePartner
+	BadgeTurbo
+	BadgeGlhfPledge
+	BadgeBroadcaster
+	BadgeBitsCharity
 )
 
 var objectify_handlers = map[string]objectify_handler{
