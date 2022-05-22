@@ -79,6 +79,10 @@ func (r *Client) WithHandler(id string, handler func(client *Client, state *Mess
 	}
 }
 
+func (r *Client) Chat(channel string, message string, args ...any) {
+	util.SendString(r.connection, "PRIVMSG #%s :%s", channel, fmt.Sprintf(message, args...))
+}
+
 func (r *Client) Join(channel string) (bool, error) {
 	return r.join_or_part(channel, true)
 }

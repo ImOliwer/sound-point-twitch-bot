@@ -15,8 +15,13 @@ type BotSettings struct {
 	Channel   string `json:"channel_to_join"`
 }
 
+type CommandSettings struct {
+	Prefix string `json:"prefix"`
+}
+
 type Settings struct {
-	Bot BotSettings `json:"bot"`
+	Bot     BotSettings     `json:"bot"`
+	Command CommandSettings `json:"command"`
 }
 
 func ReadSettings() *Settings {
@@ -35,6 +40,9 @@ func ReadSettings() *Settings {
 		"name": "bot_name_here",
 		"auth_token": "bot_auth_token_here",
 		"channel_to_join": "<your_channel_name>"
+	},
+	"command": {
+		"prefix": "!"
 	}
 }`)
 		created.Write(settingsContent)

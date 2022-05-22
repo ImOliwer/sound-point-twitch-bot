@@ -1,6 +1,7 @@
 package command
 
 import (
+	"log"
 	"strings"
 
 	"github.com/imoliwer/sound-point-twitch-bot/server/twitch_irc"
@@ -24,6 +25,20 @@ type Registry struct {
 	Prefix   rune
 }
 
+func NewRegistry(prefix rune, initialCmds map[string]Command) Registry {
+	if prefix == ' ' {
+		prefix = '!'
+	}
+	registry := Registry{
+		Prefix:   prefix,
+		commands: make(map[string]Command),
+	}
+	for key, cmd := range initialCmds {
+		registry.Include(key, cmd) // this is used only for the loggings and lowered names
+	}
+	return registry
+}
+
 func (r *Registry) Include(name string, parent Command) {
 	lowered := strings.ToLower(name)
 	r.commands[lowered] = parent
@@ -38,7 +53,9 @@ func (r *Registry) Exclude(name string) {
 	}
 }
 
-func (r *Registry) Handle(raw string, client *twitch_irc.Client, state *twitch_irc.MessageState) {
+func (r *Registry) DefaultHandler(client *twitch_irc.Client, state *twitch_irc.MessageState) {
+	raw := state.Text
+	log.Println(raw)
 	if raw == "" || len(raw) == 1 || raw[0] != byte(r.Prefix) {
 		return
 	}
@@ -46,7 +63,7 @@ func (r *Registry) Handle(raw string, client *twitch_irc.Client, state *twitch_i
 	arguments := strings.Split(raw[1:], " ")
 	name := strings.ToLower(arguments[0])
 
-	command, ok := r.commands[name]
+	command, ok := r.commands[strings.TrimSuffix(name, "\r")]
 	if !ok {
 		return
 	}

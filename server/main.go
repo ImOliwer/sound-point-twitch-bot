@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/imoliwer/sound-point-twitch-bot/server/app"
+	"github.com/imoliwer/sound-point-twitch-bot/server/command"
 	"github.com/imoliwer/sound-point-twitch-bot/server/model"
 	"github.com/imoliwer/sound-point-twitch-bot/server/twitch_irc"
 	"github.com/uptrace/bun"
@@ -76,11 +77,23 @@ func main() {
 	if channelToJoin == "" {
 		panic("Invalid channel name in settings.")
 	}
+
 	twitchIRC := twitch_irc.NewClient()
 	twitchIRC.Listen(&application)
-	twitchIRC.Join(channelToJoin)
 
-	//TODO: set up the handling of commands
+	// handle commands
+	cmdPrefix := []rune(settings.Command.Prefix)
+	if len(cmdPrefix) != 1 {
+		panic("Command prefix must consist of ONE character")
+	}
+
+	cmdRegistry := command.NewRegistry(
+		cmdPrefix[0],
+		map[string]command.Command{},
+	)
+
+	twitchIRC.WithHandler("message", cmdRegistry.DefaultHandler)
+	twitchIRC.Join(channelToJoin) // join after command handle
 
 	// signal for shutdown
 	shutdown := make(chan os.Signal)
