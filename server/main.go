@@ -89,7 +89,9 @@ func main() {
 
 	cmdRegistry := command.NewRegistry(
 		cmdPrefix[0],
-		map[string]command.Command{},
+		map[string]command.PrimaryCommand{
+			"points": command.NewPointsCommand(),
+		},
 	)
 
 	twitchIRC.WithHandler("message", cmdRegistry.DefaultHandler)

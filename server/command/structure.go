@@ -1,7 +1,6 @@
 package command
 
 import (
-	"log"
 	"strings"
 
 	"github.com/imoliwer/sound-point-twitch-bot/server/twitch_irc"
@@ -10,6 +9,10 @@ import (
 
 type UserRequirement = func(*twitch_irc.Client, *twitch_irc.UserState) bool
 
+var ModRequirement UserRequirement = func(c *twitch_irc.Client, us *twitch_irc.UserState) bool {
+	return us.IsModerator || us.Badges.Is(twitch_irc.BadgeBroadcaster)
+}
+
 type Context struct {
 	State     *twitch_irc.MessageState
 	Arguments []string
@@ -17,21 +20,26 @@ type Context struct {
 
 type Command struct {
 	Requirements []UserRequirement
-	Execution    func(*twitch_irc.Client, Context)
+	Execute      func(*twitch_irc.Client, Context)
+}
+
+type PrimaryCommand struct {
+	Command
+	Children map[string]Command
 }
 
 type Registry struct {
-	commands map[string]Command
+	commands map[string]PrimaryCommand
 	Prefix   rune
 }
 
-func NewRegistry(prefix rune, initialCmds map[string]Command) Registry {
+func NewRegistry(prefix rune, initialCmds map[string]PrimaryCommand) Registry {
 	if prefix == ' ' {
 		prefix = '!'
 	}
 	registry := Registry{
 		Prefix:   prefix,
-		commands: make(map[string]Command),
+		commands: make(map[string]PrimaryCommand),
 	}
 	for key, cmd := range initialCmds {
 		registry.Include(key, cmd) // this is used only for the loggings and lowered names
@@ -39,7 +47,7 @@ func NewRegistry(prefix rune, initialCmds map[string]Command) Registry {
 	return registry
 }
 
-func (r *Registry) Include(name string, parent Command) {
+func (r *Registry) Include(name string, parent PrimaryCommand) {
 	lowered := strings.ToLower(name)
 	r.commands[lowered] = parent
 	util.Log("Commands", "Registered '%s'", lowered)
@@ -55,30 +63,56 @@ func (r *Registry) Exclude(name string) {
 
 func (r *Registry) DefaultHandler(client *twitch_irc.Client, state *twitch_irc.MessageState) {
 	raw := state.Text
-	log.Println(raw)
 	if raw == "" || len(raw) == 1 || raw[0] != byte(r.Prefix) {
 		return
 	}
 
-	arguments := strings.Split(raw[1:], " ")
+	raw = strings.TrimSuffix(raw[1:], "\r")
+	arguments := strings.Split(raw, " ")
 	name := strings.ToLower(arguments[0])
 
-	command, ok := r.commands[strings.TrimSuffix(name, "\r")]
-	if !ok {
+	command, ok := r.commands[name]
+	if !ok || !try_requirements(command.Command, client, state) {
 		return
 	}
 
-	for _, requirement := range command.Requirements {
-		if !requirement(client, &state.User) {
+	children := command.Children
+	arguments = arguments[1:]
+
+	if len(children) > 0 {
+		if len(arguments) == 0 {
 			return
 		}
-	}
 
-	command.Execution(
-		client,
-		Context{
+		childCommand, ok := children[strings.ToLower(arguments[0])]
+		if !ok || !try_requirements(childCommand, client, state) {
+			return
+		}
+
+		try_exec(childCommand.Execute, client, Context{
 			State:     state,
 			Arguments: arguments[1:],
-		},
-	)
+		})
+		return
+	}
+
+	try_exec(command.Execute, client, Context{
+		State:     state,
+		Arguments: arguments,
+	})
+}
+
+func try_requirements(cmd Command, client *twitch_irc.Client, state *twitch_irc.MessageState) bool {
+	for _, requirement := range cmd.Requirements {
+		if !requirement(client, &state.User) {
+			return false
+		}
+	}
+	return true
+}
+
+func try_exec(exec func(*twitch_irc.Client, Context), client *twitch_irc.Client, ctx Context) {
+	if exec != nil {
+		exec(client, ctx)
+	}
 }
