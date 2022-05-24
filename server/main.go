@@ -80,6 +80,7 @@ func main() {
 
 	twitchIRC := twitch_irc.NewClient()
 	twitchIRC.Listen(&application)
+	defer twitchIRC.Stop()
 
 	// handle commands
 	cmdPrefix := []rune(settings.Command.Prefix)
@@ -103,9 +104,6 @@ func main() {
 	// ensure an awaited channel
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM, os.Interrupt)
 	<-shutdown
-
-	// close the irc connection
-	twitchIRC.Stop()
 
 	// termination message
 	log.Println("Cleaning up and shutting down...")
