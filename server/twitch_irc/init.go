@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/imoliwer/sound-point-twitch-bot/server/app"
 	"github.com/imoliwer/sound-point-twitch-bot/server/util"
 	"golang.org/x/net/websocket"
@@ -80,7 +81,22 @@ func (r *Client) WithHandler(id string, handler func(client *Client, state *Mess
 }
 
 func (r *Client) Chat(channel string, message string, args ...any) {
-	util.SendString(r.connection, "PRIVMSG #%s :%s", channel, fmt.Sprintf(message, args...))
+	util.SendString(
+		r.connection,
+		"PRIVMSG #%s :%s",
+		channel,
+		fmt.Sprintf(message, args...),
+	)
+}
+
+func (r *Client) ReplyTo(parentMsgId uuid.UUID, channel string, message string, args ...any) {
+	util.SendString(
+		r.connection,
+		"@reply-parent-msg-id=%s PRIVMSG #%s :%s",
+		parentMsgId.String(),
+		channel,
+		fmt.Sprintf(message, args...),
+	)
 }
 
 func (r *Client) Join(channel string) (bool, error) {
