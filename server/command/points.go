@@ -54,7 +54,7 @@ func points_give(ctx Context) {
 		return
 	}
 
-	ctx.Reply("\"%s\" has been given %s points.", username, amount)
+	ctx.Reply("\"%s\" has been given %d points.", username, amount)
 }
 
 func NewPointsCommand() PrimaryCommand {

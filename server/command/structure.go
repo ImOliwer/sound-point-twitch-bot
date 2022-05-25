@@ -63,7 +63,7 @@ func (r *Registry) Exclude(name string) {
 }
 
 func (r *Registry) DefaultHandler(client *twitch_irc.Client, state *twitch_irc.MessageState) {
-	raw := state.Text
+	raw := strings.Join(strings.Fields(state.Text), " ")
 	if raw == "" || len(raw) == 1 || raw[0] != byte(r.Prefix) {
 		return
 	}
