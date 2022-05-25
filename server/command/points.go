@@ -20,7 +20,7 @@ func points_give(ctx Context) {
 	}
 
 	amount, err := util.Uint64(ctx.Arguments[1])
-	if err != nil {
+	if err != nil || amount == 0 {
 		ctx.Reply("You must specify a valid amount.")
 		return
 	}
