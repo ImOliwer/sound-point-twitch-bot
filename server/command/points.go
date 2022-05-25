@@ -9,7 +9,7 @@ import (
 	"github.com/imoliwer/sound-point-twitch-bot/server/util"
 )
 
-func points_give_handle(ctx Context) {
+func points_give(ctx Context) {
 	switch len(ctx.Arguments) {
 	case 0:
 		ctx.Reply("Please specify a user to give points to.")
@@ -67,7 +67,7 @@ func NewPointsCommand() PrimaryCommand {
 		Children: map[string]Command{
 			"give": {
 				Requirements: make([]UserRequirement, 0),
-				Execute:      points_give_handle,
+				Execute:      points_give,
 			},
 		},
 	}
