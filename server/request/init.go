@@ -1,15 +1,16 @@
 package request
 
 import (
-	"errors"
 	"io"
 	"net/http"
 	"time"
 )
 
 type TwitchRequestProfile struct {
-	ClientID   string
-	OAuthToken string
+	ClientID     string
+	ClientSecret string
+	OAuthToken   string
+	RefreshToken string
 }
 
 type RequestProfiles struct {
@@ -24,16 +25,8 @@ type Request struct {
 	Headers map[string]string
 }
 
-var request_profiles *RequestProfiles
+var Profiles *RequestProfiles
 var client = &http.Client{Timeout: time.Second * 5}
-
-func Assign(profiles *RequestProfiles) error {
-	if request_profiles != nil {
-		return errors.New("request_profiles has already been assigned")
-	}
-	request_profiles = profiles
-	return nil
-}
 
 func Build(r Request) *http.Request {
 	req, err := http.NewRequest(r.Method, r.URL, r.Body)

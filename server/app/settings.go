@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"time"
+
+	"github.com/imoliwer/sound-point-twitch-bot/server/request"
 )
 
 type TwitchCommandSettings struct {
@@ -22,6 +24,7 @@ type TwitchBotSettings struct {
 
 type TempTwitchAccessSettings struct {
 	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
 	AuthToken    string `json:"auth_token"`
 	RefreshToken string `json:"refresh_token"`
 }
@@ -29,6 +32,19 @@ type TempTwitchAccessSettings struct {
 type Settings struct {
 	TwitchBot       TwitchBotSettings         `json:"twitch_chat_bot"`
 	TwitchAccessory *TempTwitchAccessSettings `json:"twitch_accessories"` // temporary
+}
+
+func (r *Settings) Save() {
+	profile := request.Profiles.Twitch
+	r.TwitchAccessory = &TempTwitchAccessSettings{
+		ClientID:     profile.ClientID,
+		ClientSecret: profile.ClientSecret,
+		AuthToken:    profile.OAuthToken,
+		RefreshToken: profile.RefreshToken,
+	}
+
+	bytes, _ := json.MarshalIndent(r, "", "  ")
+	os.WriteFile("settings.json", bytes, 0)
 }
 
 func ReadSettings() *Settings {
@@ -53,8 +69,9 @@ func ReadSettings() *Settings {
 	},
 	"twitch_accessories": {
 		"client_id": "<your_client_id>",
+		"client_secret": "<your_client_secret>",
 		"auth_token": "<your_auth_token>",
-		"refresh_token": "<your_refresh_token>"
+		"refresh_token": "<your_refresh_token>",
 	}
 }`)
 		created.Write(settingsContent)

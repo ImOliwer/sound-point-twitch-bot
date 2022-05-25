@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/imoliwer/sound-point-twitch-bot/server/app"
 	"github.com/imoliwer/sound-point-twitch-bot/server/command"
@@ -33,15 +34,33 @@ func main() {
 		Settings: settings,
 	}
 
-	// TODO: validate the oauth token and fetch a new one via refresh token if invalid before proceeding with assigning the Twitch profile
-	request.Assign(&request.RequestProfiles{
+	// handle the assignment of request profiles
+	twitchAccessory := settings.TwitchAccessory
+	request.Profiles = &request.RequestProfiles{
 		Twitch: request.TwitchRequestProfile{
-			ClientID:   settings.TwitchAccessory.ClientID,
-			OAuthToken: settings.TwitchAccessory.AuthToken,
+			ClientID:     twitchAccessory.ClientID,
+			ClientSecret: twitchAccessory.ClientSecret,
+			OAuthToken:   twitchAccessory.AuthToken,
+			RefreshToken: twitchAccessory.RefreshToken,
 		},
-	})
-
+	}
 	settings.TwitchAccessory = nil // after request assigning
+
+	// handle the validation of the user's Twitch oauth token
+	refreshTimer := checkToken(true, false, nil)
+	validationTicker := time.NewTicker(time.Hour)
+
+	go func(ticker *time.Ticker) {
+		for range ticker.C {
+			timer := checkToken(false, false, refreshTimer)
+			if timer != nil {
+				refreshTimer = timer
+			}
+		}
+	}(validationTicker)
+
+	defer refreshTimer.Stop()
+	defer validationTicker.Stop()
 
 	// attempt to create the SQLite database in case it's absent
 	if _, err := os.Stat("data.db"); errors.Is(err, os.ErrNotExist) {
@@ -119,5 +138,50 @@ func main() {
 	<-shutdown
 
 	// termination message
+	application.Settings.Save()
 	log.Println("Cleaning up and shutting down...")
+}
+
+func checkToken(first bool, ignoreValidation bool, old *time.Timer) *time.Timer {
+	profile := request.Profiles.Twitch
+
+	if !ignoreValidation {
+		if validation := request.ValidateTwitchToken(profile.OAuthToken); validation != nil {
+			if first {
+				return tokenTimer(validation.ExpiresIn)
+			}
+			return nil
+		} else {
+			panic("The OAuth and Refresh token seem to be invalid. Please regenerate, replace (in settings.json) and restart.")
+		}
+	}
+
+	response := request.RefreshCurrentTwitchToken()
+	if response == nil {
+		panic("Refresh token is invalid. Please generate a new one and replace the one in \"settings.json.\"")
+	}
+
+	// attempt to revoke current just to avoid multiple (twitch holds up to 50 access tokens per refresh token)
+	request.RevokeTwitchToken(request.Profiles.Twitch.OAuthToken)
+
+	request.Profiles.Twitch = request.TwitchRequestProfile{
+		ClientID:     profile.ClientID,
+		ClientSecret: profile.ClientSecret,
+		OAuthToken:   response.AccessToken,
+		RefreshToken: response.RefreshToken,
+	}
+
+	if old != nil {
+		old.Stop()
+	}
+	return tokenTimer(response.ExpiresIn)
+}
+
+func tokenTimer(expiresIn uint64) *time.Timer {
+	timer := time.NewTimer(time.Duration(expiresIn) * time.Second)
+	go func(t *time.Timer) {
+		<-timer.C
+		checkToken(false, true, t)
+	}(timer)
+	return timer
 }

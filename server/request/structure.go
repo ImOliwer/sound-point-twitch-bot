@@ -1,5 +1,21 @@
 package request
 
+type TwitchOAuthValidation struct {
+	ClientID  string   `json:"client_id"`
+	Login     string   `json:"login"`
+	Scopes    []string `json:"scopes"`
+	UserID    string   `json:"user_id"`
+	ExpiresIn uint64   `json:"expires_in"`
+}
+
+type TwitchOAuthRefresh struct {
+	AccessToken  string   `json:"access_token"`
+	RefreshToken string   `json:"refresh_token"`
+	ExpiresIn    uint64   `json:"expires_in"`
+	Scopes       []string `json:"scope"`
+	TokenType    string   `json:"token_type"`
+}
+
 type TwitchUser struct {
 	Id              string `json:"id"`
 	Login           string `json:"login"`
