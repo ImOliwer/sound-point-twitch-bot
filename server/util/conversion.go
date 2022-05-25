@@ -14,9 +14,9 @@ func Int64(value string) int64 {
 	return i64
 }
 
-func Uint64(value string) uint64 {
-	ui64, _ := strconv.ParseUint(value, 10, 64)
-	return ui64
+func Uint64(value string) (uint64, error) {
+	ui64, err := strconv.ParseUint(value, 10, 64)
+	return ui64, err
 }
 
 func Uint32(value string) uint32 {

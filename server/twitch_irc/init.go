@@ -25,21 +25,23 @@ var privmsg_regex = *regexp.MustCompile(`(?m)^(.+):(.+)!(.+)@(.+)\.tmi\.twitch\.
 var noticemsg_regex = *regexp.MustCompile(`(?m)^(.+):tmi\.twitch\.tv USERNOTICE #(.+)(?:(:(.*)))$`)
 
 type Client struct {
+	App        *app.Application
 	connection *websocket.Conn
 	channels   map[string]bool
 	onMessage  func(client *Client, state *MessageState)
 	onNotice   func(client *Client, state *MessageState)
 }
 
-func NewClient() Client {
+func NewClient(app *app.Application) Client {
 	return Client{
+		App:        app,
 		connection: nil,
 		channels:   map[string]bool{},
 	}
 }
 
-func (r *Client) Listen(app *app.Application) {
-	botSettings := app.Settings.Bot
+func (r *Client) Listen() {
+	botSettings := r.App.Settings.TwitchBot
 	connection, err := websocket.Dial("ws://irc-ws.chat.twitch.tv:80", "", "http://twitch.tv:80/")
 
 	if err != nil {
@@ -51,7 +53,7 @@ func (r *Client) Listen(app *app.Application) {
 	r.connection = connection
 
 	// handle receiving data
-	r.StartReading(app)
+	r.StartReading(r.App)
 
 	// enforce lowercase on nick
 	nick := strings.ToLower(botSettings.Name)

@@ -9,19 +9,26 @@ import (
 	"time"
 )
 
-type BotSettings struct {
-	Name      string `json:"name"`
-	AuthToken string `json:"auth_token"`
-	Channel   string `json:"channel_to_join"`
-}
-
-type CommandSettings struct {
+type TwitchCommandSettings struct {
 	Prefix string `json:"prefix"`
 }
 
+type TwitchBotSettings struct {
+	Name      string                `json:"name"`
+	AuthToken string                `json:"auth_token"`
+	Channel   string                `json:"channel_to_join"`
+	Command   TwitchCommandSettings `json:"command"`
+}
+
+type TempTwitchAccessSettings struct {
+	ClientID     string `json:"client_id"`
+	AuthToken    string `json:"auth_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
 type Settings struct {
-	Bot     BotSettings     `json:"bot"`
-	Command CommandSettings `json:"command"`
+	TwitchBot       TwitchBotSettings         `json:"twitch_chat_bot"`
+	TwitchAccessory *TempTwitchAccessSettings `json:"twitch_accessories"` // temporary
 }
 
 func ReadSettings() *Settings {
@@ -36,13 +43,18 @@ func ReadSettings() *Settings {
 			return nil
 		}
 		settingsContent = []byte(`{
-  "bot": {
-		"name": "bot_name_here",
-		"auth_token": "bot_auth_token_here",
-		"channel_to_join": "<your_channel_name>"
+  "twitch_chat_bot": {
+		"name": "<bot_username>",
+		"auth_token": "<bot_auth_token>",
+		"channel_to_join": "<your_channel_name>",
+		"command": {
+			"prefix": "!"
+		}
 	},
-	"command": {
-		"prefix": "!"
+	"twitch_accessories": {
+		"client_id": "<your_client_id>",
+		"auth_token": "<your_auth_token>",
+		"refresh_token": "<your_refresh_token>"
 	}
 }`)
 		created.Write(settingsContent)

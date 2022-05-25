@@ -14,13 +14,14 @@ var ModRequirement UserRequirement = func(c *twitch_irc.Client, us *twitch_irc.U
 }
 
 type Context struct {
+	Client    *twitch_irc.Client
 	State     *twitch_irc.MessageState
 	Arguments []string
 }
 
 type Command struct {
 	Requirements []UserRequirement
-	Execute      func(*twitch_irc.Client, Context)
+	Execute      func(Context)
 }
 
 type PrimaryCommand struct {
@@ -89,17 +90,23 @@ func (r *Registry) DefaultHandler(client *twitch_irc.Client, state *twitch_irc.M
 			return
 		}
 
-		try_exec(childCommand.Execute, client, Context{
+		try_exec(childCommand.Execute, Context{
+			Client:    client,
 			State:     state,
 			Arguments: arguments[1:],
 		})
 		return
 	}
 
-	try_exec(command.Execute, client, Context{
+	try_exec(command.Execute, Context{
+		Client:    client,
 		State:     state,
 		Arguments: arguments,
 	})
+}
+
+func (r Context) Reply(message string, args ...any) {
+	r.Client.ReplyTo(r.State.Id, r.State.ChannelName, message, args...)
 }
 
 func try_requirements(cmd Command, client *twitch_irc.Client, state *twitch_irc.MessageState) bool {
@@ -111,8 +118,8 @@ func try_requirements(cmd Command, client *twitch_irc.Client, state *twitch_irc.
 	return true
 }
 
-func try_exec(exec func(*twitch_irc.Client, Context), client *twitch_irc.Client, ctx Context) {
+func try_exec(exec func(Context), ctx Context) {
 	if exec != nil {
-		exec(client, ctx)
+		exec(ctx)
 	}
 }
