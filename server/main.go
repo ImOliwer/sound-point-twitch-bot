@@ -48,12 +48,11 @@ func main() {
 	settings.TwitchAccessory = nil // after request assigning
 
 	// handle the validation of the user's Twitch oauth token
-	refreshTask := checkToken(true, false, nil)
+	refreshTask := &scheduler.LaterTask{}
+	checkToken(true, false, nil, refreshTask)
+
 	validationTask := scheduler.Every(time.Hour, func(_ *scheduler.RepeatingTask) {
-		task := checkToken(false, false, refreshTask)
-		if task != nil {
-			refreshTask = task
-		}
+		checkToken(false, false, refreshTask, refreshTask)
 	})
 
 	defer refreshTask.Cancel()
@@ -139,15 +138,15 @@ func main() {
 	log.Println("Cleaning up and shutting down...")
 }
 
-func checkToken(first bool, ignoreValidation bool, old *scheduler.LaterTask) *scheduler.LaterTask {
+func checkToken(first bool, ignoreValidation bool, old *scheduler.LaterTask, ptr *scheduler.LaterTask) {
 	profile := request.Profiles.Twitch
 
 	if !ignoreValidation {
 		if validation := request.ValidateTwitchToken(profile.OAuthToken); validation != nil {
 			if first {
-				return tokenTimer(validation.ExpiresIn)
+				tokenTimer(validation.ExpiresIn, ptr)
 			}
-			return nil
+			return
 		}
 	}
 
@@ -169,14 +168,14 @@ func checkToken(first bool, ignoreValidation bool, old *scheduler.LaterTask) *sc
 	if old != nil {
 		old.Cancel()
 	}
-	return tokenTimer(response.ExpiresIn)
+	tokenTimer(response.ExpiresIn, ptr)
 }
 
-func tokenTimer(expiresIn uint64) *scheduler.LaterTask {
-	return scheduler.After(
+func tokenTimer(expiresIn uint64, ptr *scheduler.LaterTask) {
+	*ptr = *scheduler.After(
 		time.Duration(expiresIn)*time.Second,
 		func(this *scheduler.LaterTask) {
-			checkToken(false, true, this)
+			checkToken(false, true, this, ptr)
 		},
 	)
 }
