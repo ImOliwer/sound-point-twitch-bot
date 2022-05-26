@@ -14,6 +14,7 @@ import (
 	"github.com/imoliwer/sound-point-twitch-bot/server/command"
 	"github.com/imoliwer/sound-point-twitch-bot/server/model"
 	"github.com/imoliwer/sound-point-twitch-bot/server/request"
+	"github.com/imoliwer/sound-point-twitch-bot/server/scheduler"
 	"github.com/imoliwer/sound-point-twitch-bot/server/twitch_irc"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/sqlitedialect"
@@ -47,20 +48,18 @@ func main() {
 	settings.TwitchAccessory = nil // after request assigning
 
 	// handle the validation of the user's Twitch oauth token
-	refreshTimer := checkToken(true, false, nil)
-	validationTicker := time.NewTicker(time.Hour)
-
-	go func(ticker *time.Ticker) {
-		for range ticker.C {
-			timer := checkToken(false, false, refreshTimer)
-			if timer != nil {
-				refreshTimer = timer
-			}
+	refreshTask := checkToken(true, false, nil)
+	validationTask := scheduler.Every(time.Hour, func(_ *scheduler.RepeatingTask) {
+		log.Println("validating token from hour task...")
+		task := checkToken(false, false, refreshTask)
+		if task != nil {
+			log.Println("assigning new hour task...")
+			refreshTask = task
 		}
-	}(validationTicker)
+	})
 
-	defer refreshTimer.Stop()
-	defer validationTicker.Stop()
+	defer refreshTask.Cancel()
+	defer validationTask.Cancel()
 
 	// attempt to create the SQLite database in case it's absent
 	if _, err := os.Stat("data.db"); errors.Is(err, os.ErrNotExist) {
@@ -142,7 +141,7 @@ func main() {
 	log.Println("Cleaning up and shutting down...")
 }
 
-func checkToken(first bool, ignoreValidation bool, old *time.Timer) *time.Timer {
+func checkToken(first bool, ignoreValidation bool, old *scheduler.LaterTask) *scheduler.LaterTask {
 	profile := request.Profiles.Twitch
 
 	if !ignoreValidation {
@@ -170,16 +169,16 @@ func checkToken(first bool, ignoreValidation bool, old *time.Timer) *time.Timer 
 	}
 
 	if old != nil {
-		old.Stop()
+		old.Cancel()
 	}
 	return tokenTimer(response.ExpiresIn)
 }
 
-func tokenTimer(expiresIn uint64) *time.Timer {
-	timer := time.NewTimer(time.Duration(expiresIn) * time.Second)
-	go func(t *time.Timer) {
-		<-timer.C
-		checkToken(false, true, t)
-	}(timer)
-	return timer
+func tokenTimer(expiresIn uint64) *scheduler.LaterTask {
+	return scheduler.After(
+		time.Duration(expiresIn)*time.Second,
+		func(this *scheduler.LaterTask) {
+			checkToken(false, true, this)
+		},
+	)
 }
