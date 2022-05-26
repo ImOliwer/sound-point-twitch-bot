@@ -47,7 +47,7 @@ func main() {
 	settings.TwitchAccessory = nil // after request assigning
 
 	// handle the validation of the user's Twitch oauth token
-	refreshTimer := checkToken(true, false, nil)
+	refreshTimer := checkToken(true, false, nil) // TODO: test if this handles the automated process of refreshing token properly in them morning when mine has expired.
 	validationTicker := time.NewTicker(time.Hour)
 
 	go func(ticker *time.Ticker) {
@@ -151,14 +151,12 @@ func checkToken(first bool, ignoreValidation bool, old *time.Timer) *time.Timer 
 				return tokenTimer(validation.ExpiresIn)
 			}
 			return nil
-		} else {
-			panic("The OAuth and Refresh token seem to be invalid. Please regenerate, replace (in settings.json) and restart.")
 		}
 	}
 
 	response := request.RefreshCurrentTwitchToken()
 	if response == nil {
-		panic("Refresh token is invalid. Please generate a new one and replace the one in \"settings.json.\"")
+		panic("Twitch 'Refresh Token' is invalid. Please generate a new one and replace the one in \"settings.json.\"")
 	}
 
 	// attempt to revoke current just to avoid multiple (twitch holds up to 50 access tokens per refresh token)
