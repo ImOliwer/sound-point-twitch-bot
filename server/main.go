@@ -47,7 +47,7 @@ func main() {
 	settings.TwitchAccessory = nil // after request assigning
 
 	// handle the validation of the user's Twitch oauth token
-	refreshTimer := checkToken(true, false, nil) // TODO: test if this handles the automated process of refreshing token properly in them morning when mine has expired.
+	refreshTimer := checkToken(true, false, nil)
 	validationTicker := time.NewTicker(time.Hour)
 
 	go func(ticker *time.Ticker) {
