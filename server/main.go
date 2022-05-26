@@ -50,10 +50,8 @@ func main() {
 	// handle the validation of the user's Twitch oauth token
 	refreshTask := checkToken(true, false, nil)
 	validationTask := scheduler.Every(time.Hour, func(_ *scheduler.RepeatingTask) {
-		log.Println("validating token from hour task...")
 		task := checkToken(false, false, refreshTask)
 		if task != nil {
-			log.Println("assigning new hour task...")
 			refreshTask = task
 		}
 	})
