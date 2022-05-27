@@ -1,8 +1,11 @@
 package command
 
 import (
+	"context"
+	"database/sql"
 	"strings"
 
+	"github.com/imoliwer/sound-point-twitch-bot/server/model"
 	"github.com/imoliwer/sound-point-twitch-bot/server/twitch_irc"
 	"github.com/imoliwer/sound-point-twitch-bot/server/util"
 )
@@ -80,11 +83,7 @@ func (r *Registry) DefaultHandler(client *twitch_irc.Client, state *twitch_irc.M
 	children := command.Children
 	arguments = arguments[1:]
 
-	if len(children) > 0 {
-		if len(arguments) == 0 {
-			return
-		}
-
+	if len(children) > 0 && len(arguments) > 0 {
 		childCommand, ok := children[strings.ToLower(arguments[0])]
 		if !ok || !try_requirements(childCommand, client, state) {
 			return
@@ -107,6 +106,27 @@ func (r *Registry) DefaultHandler(client *twitch_irc.Client, state *twitch_irc.M
 
 func (r Context) Reply(message string, args ...any) {
 	r.Client.ReplyTo(r.State.Id, r.State.ChannelName, message, args...)
+}
+
+func (r Context) CheckErr(err error) bool {
+	if err == nil {
+		return true
+	}
+
+	r.Reply("An error occurred during the operation. Contact personel for further assistance in the matter.")
+	return false
+}
+
+func (r Context) ModifyUser(mod *model.User, setters map[string][]interface{}) (sql.Result, error) {
+	query := r.Client.App.Database.
+		NewInsert().
+		Model(mod).
+		On("CONFLICT (id) DO UPDATE")
+
+	for key, value := range setters {
+		query = query.Set(key, value...)
+	}
+	return query.Exec(context.Background())
 }
 
 func try_requirements(cmd Command, client *twitch_irc.Client, state *twitch_irc.MessageState) bool {

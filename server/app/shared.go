@@ -3,6 +3,6 @@ package app
 import "github.com/imoliwer/sound-point-twitch-bot/server/model"
 
 // global variables
-var models ModelStructure = ModelStructure{
+var Models ModelStructure = ModelStructure{
 	User: (*model.User)(nil),
 }
