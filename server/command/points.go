@@ -2,11 +2,8 @@ package command
 
 import (
 	"context"
-	"errors"
-	"strings"
 
 	"github.com/imoliwer/sound-point-twitch-bot/server/model"
-	"github.com/imoliwer/sound-point-twitch-bot/server/request"
 	"github.com/imoliwer/sound-point-twitch-bot/server/util"
 )
 
@@ -20,11 +17,13 @@ func points_no_arg(ctx Context) {
 		Where("id = ?", userId).
 		Scan(context.Background())
 
+	message := ctx.AppMessages().PointsNoArg
 	if err != nil {
-		ctx.Reply("You currently have 0 points.")
+		ctx.Reply(message, 0)
 		return
 	}
-	ctx.Reply("You currently have %d points.", response.Points)
+
+	ctx.Reply(message, response.Points)
 }
 
 func points_give(ctx Context) {
@@ -41,7 +40,7 @@ func points_give(ctx Context) {
 	)
 
 	ctx.CheckErr(err)
-	ctx.Reply("%s has been given %d points.", username, amount)
+	ctx.Reply(ctx.AppMessages().PointsGiveSuccess, username, amount)
 }
 
 func points_set(ctx Context) {
@@ -58,7 +57,7 @@ func points_set(ctx Context) {
 	)
 
 	ctx.CheckErr(err)
-	ctx.Reply("The points of %s has been set to %d.", username, amount)
+	ctx.Reply(ctx.AppMessages().PointsSetSuccess, username, amount)
 }
 
 func NewPointsCommand() PrimaryCommand {
@@ -102,42 +101,4 @@ func points_standard(ctx *Context, allowZero bool) (uint64, string, uint64, bool
 		return 0, "", 0, false
 	}
 	return amount, username, userId, true
-}
-
-func check_user_and_amount(ctx *Context) bool {
-	switch len(ctx.Arguments) {
-	case 0:
-		ctx.Reply("Please specify a user.")
-		return false
-	case 1:
-		ctx.Reply("Please specify the amount of points.")
-		return false
-	}
-	return true
-}
-
-func amount_of(ctx *Context, allowZero bool) (uint64, error) {
-	amount, err := util.Uint64(ctx.Arguments[1])
-	if err != nil || (!allowZero && amount == 0) {
-		ctx.Reply("You must specify a valid amount.")
-		return 0, errors.New("invalid amount")
-	}
-	return amount, nil
-}
-
-func user_of(ctx *Context) (string, uint64, error) {
-	var userId uint64
-	username := strings.ToLower(ctx.Arguments[0])
-
-	if username == strings.ToLower(ctx.State.User.DisplayName) {
-		userId, _ = util.Uint64(ctx.State.User.Id)
-	} else {
-		userBy := request.TwitchUserBy(username)
-		if userBy == nil {
-			ctx.Reply("Could not find the user \"%s.\"", username)
-			return username, 0, errors.New("user not found")
-		}
-		userId, _ = util.Uint64(userBy.Id)
-	}
-	return username, userId, nil
 }

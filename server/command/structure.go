@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"strings"
 
+	"github.com/imoliwer/sound-point-twitch-bot/server/app"
 	"github.com/imoliwer/sound-point-twitch-bot/server/model"
 	"github.com/imoliwer/sound-point-twitch-bot/server/twitch_irc"
 	"github.com/imoliwer/sound-point-twitch-bot/server/util"
@@ -33,8 +34,9 @@ type PrimaryCommand struct {
 }
 
 type Registry struct {
-	commands map[string]PrimaryCommand
-	Prefix   rune
+	commands     map[string]PrimaryCommand
+	readyForNext bool
+	Prefix       rune
 }
 
 func NewRegistry(prefix rune, initialCmds map[string]PrimaryCommand) Registry {
@@ -42,8 +44,9 @@ func NewRegistry(prefix rune, initialCmds map[string]PrimaryCommand) Registry {
 		prefix = '!'
 	}
 	registry := Registry{
-		Prefix:   prefix,
-		commands: make(map[string]PrimaryCommand),
+		Prefix:       prefix,
+		commands:     make(map[string]PrimaryCommand),
+		readyForNext: true,
 	}
 	for key, cmd := range initialCmds {
 		registry.Include(key, cmd) // this is used only for the loggings and lowered names
@@ -65,18 +68,40 @@ func (r *Registry) Exclude(name string) {
 	}
 }
 
+func (r *Registry) MakeNotReady() {
+	r.readyForNext = false
+}
+
+func (r *Registry) MakeReady() {
+	r.readyForNext = true
+}
+
+func (r *Registry) IsReadyForNext() bool {
+	return r.readyForNext
+}
+
 func (r *Registry) DefaultHandler(client *twitch_irc.Client, state *twitch_irc.MessageState) {
-	raw := strings.Join(strings.Fields(state.Text), " ")
-	if raw == "" || len(raw) == 1 || raw[0] != byte(r.Prefix) {
+	raw := state.Text
+	if raw == "" || len(raw) == 1 || raw[0] != byte(r.Prefix) || !r.readyForNext { // ensure the client is ready for the next command as well
 		return
 	}
 
+	r.MakeNotReady() // no longer accept commands
+
+	raw = strings.Join(strings.Fields(raw), " ")
 	raw = strings.TrimSuffix(raw[1:], "\r")
 	arguments := strings.Split(raw, " ")
 	name := strings.ToLower(arguments[0])
 
 	command, ok := r.commands[name]
-	if !ok || !try_requirements(command.Command, client, state) {
+	if !ok {
+		r.MakeReady() // accept commands
+		return
+	}
+
+	primaryOption, ok := client.App.Settings.TwitchBot.Command.Options[name]
+	if !try_requirements(command.Command, client, state) || !ok || !primaryOption.Enabled {
+		r.MakeReady() // accept commands
 		return
 	}
 
@@ -84,8 +109,17 @@ func (r *Registry) DefaultHandler(client *twitch_irc.Client, state *twitch_irc.M
 	arguments = arguments[1:]
 
 	if len(children) > 0 && len(arguments) > 0 {
-		childCommand, ok := children[strings.ToLower(arguments[0])]
-		if !ok || !try_requirements(childCommand, client, state) {
+		childName := strings.ToLower(arguments[0])
+		childCommand, ok := children[childName]
+
+		if !ok {
+			r.MakeReady() // accept commands
+			return
+		}
+
+		childOption, ok := primaryOption.Arguments[childName]
+		if !try_requirements(childCommand, client, state) || !ok || !childOption.Enabled {
+			r.MakeReady() // accept commands
 			return
 		}
 
@@ -94,6 +128,8 @@ func (r *Registry) DefaultHandler(client *twitch_irc.Client, state *twitch_irc.M
 			State:     state,
 			Arguments: arguments[1:],
 		})
+
+		r.MakeReady() // accept commands
 		return
 	}
 
@@ -102,6 +138,8 @@ func (r *Registry) DefaultHandler(client *twitch_irc.Client, state *twitch_irc.M
 		State:     state,
 		Arguments: arguments,
 	})
+
+	r.MakeReady() // accept commands
 }
 
 func (r Context) Reply(message string, args ...any) {
@@ -127,6 +165,10 @@ func (r Context) ModifyUser(mod *model.User, setters map[string][]interface{}) (
 		query = query.Set(key, value...)
 	}
 	return query.Exec(context.Background())
+}
+
+func (r Context) AppMessages() *app.TwitchCommandMessages {
+	return &r.Client.App.Settings.TwitchBot.Command.Messages
 }
 
 func try_requirements(cmd Command, client *twitch_irc.Client, state *twitch_irc.MessageState) bool {
