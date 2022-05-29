@@ -19,15 +19,16 @@ func points_no_arg(ctx Context) {
 
 	message := ctx.AppMessages().PointsNoArg
 	if err != nil {
-		ctx.Reply(message, 0)
+		ctx.ReplyExtra(message, points_placeholders)
 		return
 	}
 
-	ctx.Reply(message, response.Points)
+	ctx.withResponsePoints(response.Points)
+	ctx.ReplyExtra(message, points_placeholders)
 }
 
 func points_give(ctx Context) {
-	amount, username, userId, ok := points_standard(&ctx, false)
+	amount, _, userId, ok := pointsStandard(&ctx, false)
 	if !ok {
 		return
 	}
@@ -40,11 +41,12 @@ func points_give(ctx Context) {
 	)
 
 	ctx.CheckErr(err)
-	ctx.Reply(ctx.AppMessages().PointsGiveSuccess, username, amount)
+	ctx.withResponsePoints(amount)
+	ctx.ReplyExtra(ctx.AppMessages().PointsGiveSuccess, points_placeholders)
 }
 
 func points_set(ctx Context) {
-	amount, username, userId, ok := points_standard(&ctx, true)
+	amount, _, userId, ok := pointsStandard(&ctx, true)
 	if !ok {
 		return
 	}
@@ -57,7 +59,8 @@ func points_set(ctx Context) {
 	)
 
 	ctx.CheckErr(err)
-	ctx.Reply(ctx.AppMessages().PointsSetSuccess, username, amount)
+	ctx.withResponsePoints(amount)
+	ctx.ReplyExtra(ctx.AppMessages().PointsSetSuccess, points_placeholders)
 }
 
 func NewPointsCommand() PrimaryCommand {
@@ -86,7 +89,7 @@ func NewPointsCommand() PrimaryCommand {
 // HELPER FUNCTIONS //
 //////////////////////
 
-func points_standard(ctx *Context, allowZero bool) (uint64, string, uint64, bool) {
+func pointsStandard(ctx *Context, allowZero bool) (uint64, string, uint64, bool) {
 	if !check_user_and_amount(ctx) {
 		return 0, "", 0, false
 	}
@@ -101,4 +104,8 @@ func points_standard(ctx *Context, allowZero bool) (uint64, string, uint64, bool
 		return 0, "", 0, false
 	}
 	return amount, username, userId, true
+}
+
+func (ctx *Context) withResponsePoints(amount uint64) {
+	ctx.Temp["response-points"] = amount
 }

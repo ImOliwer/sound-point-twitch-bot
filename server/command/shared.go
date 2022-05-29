@@ -40,7 +40,7 @@ func user_of(ctx *Context) (string, uint64, error) {
 	} else {
 		userBy := request.TwitchUserBy(username)
 		if userBy == nil {
-			ctx.Reply(ctx.AppMessages().CouldNotFindUser, username)
+			ctx.Reply(ctx.AppMessages().CouldNotFindUser)
 			return username, 0, errors.New("user not found")
 		}
 		userId, _ = util.Uint64(userBy.Id)

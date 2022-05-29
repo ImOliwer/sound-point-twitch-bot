@@ -120,6 +120,7 @@ func main() {
 			map[string]command.PrimaryCommand{
 				"points": command.NewPointsCommand(),
 			},
+			map[string]command.PlaceholderFunc{}, // TODO: register a bunch of general placeholders
 		)
 
 		twitchIRC.WithHandler("message", twitchCmdRegistry.DefaultHandler)

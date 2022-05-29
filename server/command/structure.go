@@ -18,9 +18,11 @@ var ModRequirement UserRequirement = func(c *twitch_irc.Client, us *twitch_irc.U
 }
 
 type Context struct {
+	registry  *Registry
 	Client    *twitch_irc.Client
 	State     *twitch_irc.MessageState
 	Arguments []string
+	Temp      map[string]any
 }
 
 type Command struct {
@@ -36,10 +38,11 @@ type PrimaryCommand struct {
 type Registry struct {
 	commands     map[string]PrimaryCommand
 	readyForNext bool
+	placeholders map[string]PlaceholderFunc
 	Prefix       rune
 }
 
-func NewRegistry(prefix rune, initialCmds map[string]PrimaryCommand) Registry {
+func NewRegistry(prefix rune, initialCmds map[string]PrimaryCommand, placeholders map[string]PlaceholderFunc) Registry {
 	if prefix == ' ' {
 		prefix = '!'
 	}
@@ -47,6 +50,7 @@ func NewRegistry(prefix rune, initialCmds map[string]PrimaryCommand) Registry {
 		Prefix:       prefix,
 		commands:     make(map[string]PrimaryCommand),
 		readyForNext: true,
+		placeholders: placeholders,
 	}
 	for key, cmd := range initialCmds {
 		registry.Include(key, cmd) // this is used only for the loggings and lowered names
@@ -127,6 +131,8 @@ func (r *Registry) DefaultHandler(client *twitch_irc.Client, state *twitch_irc.M
 			Client:    client,
 			State:     state,
 			Arguments: arguments[1:],
+			registry:  r,
+			Temp:      make(map[string]any),
 		})
 
 		r.MakeReady() // accept commands
@@ -137,13 +143,28 @@ func (r *Registry) DefaultHandler(client *twitch_irc.Client, state *twitch_irc.M
 		Client:    client,
 		State:     state,
 		Arguments: arguments,
+		registry:  r,
+		Temp:      make(map[string]any),
 	})
 
 	r.MakeReady() // accept commands
 }
 
-func (r Context) Reply(message string, args ...any) {
-	r.Client.ReplyTo(r.State.Id, r.State.ChannelName, message, args...)
+func (r Context) Reply(message string) {
+	r.ReplyExtra(message, nil)
+}
+
+func (r Context) ReplyExtra(message string, specificPlaceholders map[string]PlaceholderFunc) {
+	placeholders := r.registry.placeholders
+	if specificPlaceholders != nil {
+		placeholders = util.MergeMaps(placeholders, specificPlaceholders)
+	}
+
+	r.Client.ReplyTo(
+		r.State.Id,
+		r.State.ChannelName,
+		r.process_placeholders(message, placeholders),
+	)
 }
 
 func (r Context) CheckErr(err error) bool {
