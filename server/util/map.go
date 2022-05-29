@@ -1,7 +1,5 @@
 package util
 
-import "log"
-
 func MergeMaps[V interface{}](maps ...map[string]V) map[string]V {
 	switch len(maps) {
 	case 0:
@@ -20,6 +18,5 @@ func MergeMaps[V interface{}](maps ...map[string]V) map[string]V {
 			population[key] = value
 		}
 	}
-	log.Println(population)
 	return population
 }
