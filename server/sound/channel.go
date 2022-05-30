@@ -1,69 +1,69 @@
 package sound
 
 import (
-	"bufio"
-	"errors"
-	"net"
+	"net/http"
+
+	"github.com/gorilla/websocket"
+	"github.com/imoliwer/sound-point-twitch-bot/server/twitch_irc"
 )
 
+type SoundDeployment struct {
+	State *twitch_irc.UserState `json:"userstate"`
+	Price uint64                `json:"price"`
+	Id    string                `json:"id"`
+}
+
 type Server struct {
-	listening bool
-	closed    bool
-	clients   map[net.Conn]bool
+	upgrader websocket.Upgrader
+	closed   bool
+	clients  map[*websocket.Conn]bool
 }
 
-func NewServer() *Server {
+func NewServer(readBuffer int, writebuffer int) *Server {
 	return &Server{
-		clients: make(map[net.Conn]bool),
+		upgrader: websocket.Upgrader{
+			ReadBufferSize:  readBuffer,
+			WriteBufferSize: writebuffer,
+		},
+		clients: make(map[*websocket.Conn]bool),
 	}
 }
 
-func (r *Server) Listen(address string) error {
-	if r.listening {
-		return errors.New("already listening")
-	}
+func (r *Server) Listen(address string) {
+	r.upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 
-	listener, err := net.Listen("tcp", address)
-	if err != nil {
-		return err
-	}
-
-	go func(listener net.Listener, server *Server) {
-		for {
-			if server.closed {
-				listener.Close()
-				return
-			}
-
-			client, err := listener.Accept()
-			if err != nil {
-				continue
-			}
-
-			server.clients[client] = true
-			server.register(client)
+	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		socket, err := r.upgrader.Upgrade(w, req, nil)
+		if err != nil {
+			panic(err)
 		}
-	}(listener, r)
+		r.clients[socket] = true
+	})
 
-	r.listening = true
-	return nil
+	go func() {
+		if err := http.ListenAndServe(address, nil); err != nil {
+			panic(err)
+		}
+	}()
 }
 
 func (r *Server) Stop() {
 	r.closed = true
 }
 
-func (r *Server) Broadcast(message []byte) {
+func (r *Server) Broadcast(obj SoundDeployment) {
 	for client := range r.clients {
-		client.Write(message)
+		client.WriteJSON(obj)
 	}
 }
 
-func (r *Server) register(conn net.Conn) {
+func (r *Server) register(conn *websocket.Conn) {
 	go func() {
 		for {
-			if _, err := bufio.NewReader(conn).ReadString('\n'); err == nil {
-				continue
+			if !r.closed {
+				if _, _, err := conn.ReadMessage(); err == nil {
+					continue
+				}
 			}
 			// ensure the closing of said client AND its (this) loop
 			r.unregister(conn)
@@ -72,7 +72,7 @@ func (r *Server) register(conn net.Conn) {
 	}()
 }
 
-func (r *Server) unregister(conn net.Conn) {
+func (r *Server) unregister(conn *websocket.Conn) {
 	delete(r.clients, conn)
 	conn.Close()
 }

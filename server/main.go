@@ -101,11 +101,11 @@ func main() {
 	}
 
 	// set up the 'sound deployment' channel(s)
-	deploymentServer := sound.NewServer()
-	if err := deploymentServer.Listen(":9999"); err != nil {
-		panic("Failed during preparation of the Sound Deployment server.")
-	}
+	deploymentServer := sound.NewServer(0, 2048)
+	deploymentServer.Listen(":9999")
+
 	util.Log("Sound Deployment", "Listener started.")
+	defer deploymentServer.Stop()
 
 	{ // set up the twitch irc
 		twitchChannelToJoin := settings.TwitchBot.Channel
