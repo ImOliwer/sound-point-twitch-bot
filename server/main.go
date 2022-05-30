@@ -15,7 +15,9 @@ import (
 	"github.com/imoliwer/sound-point-twitch-bot/server/model"
 	"github.com/imoliwer/sound-point-twitch-bot/server/request"
 	"github.com/imoliwer/sound-point-twitch-bot/server/scheduler"
+	"github.com/imoliwer/sound-point-twitch-bot/server/sound"
 	"github.com/imoliwer/sound-point-twitch-bot/server/twitch_irc"
+	"github.com/imoliwer/sound-point-twitch-bot/server/util"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/sqlitedialect"
 	"github.com/uptrace/bun/driver/sqliteshim"
@@ -98,8 +100,14 @@ func main() {
 		}
 	}
 
-	// set up the twitch irc
-	{
+	// set up the 'sound deployment' channel(s)
+	deploymentServer := sound.NewServer()
+	if err := deploymentServer.Listen(":9999"); err != nil {
+		panic("Failed during preparation of the Sound Deployment server.")
+	}
+	util.Log("Sound Deployment", "Listener started.")
+
+	{ // set up the twitch irc
 		twitchChannelToJoin := settings.TwitchBot.Channel
 		if twitchChannelToJoin == "" {
 			panic("Invalid channel name in settings.")
@@ -112,7 +120,7 @@ func main() {
 		// handle commands
 		twitchCmdPrefix := []rune(settings.TwitchBot.Command.Prefix)
 		if len(twitchCmdPrefix) != 1 {
-			panic("Command prefix must consist of ONE character")
+			panic("Command prefix must consist of ONE character.")
 		}
 
 		twitchCmdRegistry := command.NewRegistry(

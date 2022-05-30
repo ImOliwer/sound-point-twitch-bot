@@ -3,7 +3,6 @@ package twitch_irc
 import (
 	"errors"
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 
@@ -49,7 +48,7 @@ func (r *Client) Listen() {
 	}
 
 	// assign the connection and notify
-	log.Println("Established a connection to the Twitch IRC.")
+	util.Log("Twitch IRC", "Established connection.")
 	r.connection = connection
 
 	// handle receiving data
