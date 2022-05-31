@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { w3cwebsocket as WebSocket } from 'websocket';
 import { TitleDeploy } from './util/TitleDeploy';
 
-interface Deployed {
+type Deployed = {
 
 }
 
@@ -11,7 +11,7 @@ export default function Deployments() {
   const [queue, setQueue] = useState<Deployed[]>([]);
 
   useEffect(() => {
-    const socket = new WebSocket("ws://127.0.0.1:9999");
+    const socket = new WebSocket("ws://127.0.0.1:9999/sound/deployment");
 
     socket.onopen = () => setConnected(true);
     

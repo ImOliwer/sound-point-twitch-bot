@@ -102,31 +102,31 @@ func main() {
 		}
 	}
 
-	// set up the 'sound deployment' channel(s)
-	deploymentServer := sound.NewServer(0, 2048)
-	deploymentServer.Listen(":9999")
+	{ // set up the main server
+		gin.SetMode(gin.ReleaseMode)
+		engine := sound.WithCORSAndRecovery(gin.New())
+		deploymentCover := sound.NewCover(0, 2048)
 
-	util.Log("Sound Deployment", "Server started.")
-	defer deploymentServer.Stop()
+		sound.UploadHandler(engine, &application)
+		deploymentCover.Handler(engine)
 
-	// set up the dashboard channel(s)
-	// TODO: clean up all servers to only run on ONE 'gin' engine on separate endpoints
-	dashboardHandler := gin.Default()
-	sound.HandleNewSound(dashboardHandler, &application)
-
-	dashboardServer := &http.Server{
-		Addr:    ":9998",
-		Handler: dashboardHandler,
-	}
-
-	go func() {
-		if err := dashboardServer.ListenAndServe(); err != nil {
-			panic(err)
+		server := &http.Server{
+			Addr:    ":9999",
+			Handler: engine,
 		}
-	}()
 
-	util.Log("Sound Dashboard Receiver", "Server started.")
-	defer dashboardServer.Close()
+		go func() {
+			if err := server.ListenAndServe(); err != nil {
+				if errors.Is(err, http.ErrServerClosed) {
+					return
+				}
+				panic(err)
+			}
+		}()
+
+		util.Log("Deployment & Dashboard", "Server started.")
+		defer server.Close()
+	}
 
 	{ // set up the twitch irc
 		twitchChannelToJoin := settings.TwitchBot.Channel

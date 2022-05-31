@@ -26,7 +26,7 @@ const TranslateUnit = (unit: string, value: number): number => {
 const Upload = async (price: number, cooldown: number, name: string, formData: FormData): Promise<boolean> => {
   return new Promise((resolve) => {
     Axios
-      .post(`http://localhost:9998/sound/upload`, formData, {
+      .post(`http://localhost:9999/sound/upload`, formData, {
         headers: {
           "Content-Type": "multipart/form-data"
         },
@@ -47,6 +47,11 @@ const ToastError = (child: JSX.Element) => {
       backgroundColor: "rgb(195 83 83)",
     }
   })
+};
+
+const BoldSuccessStyle = {
+  fontWeight: "bold",
+  color: "#2d8538"
 };
 
 const ToastSuccess = (child: JSX.Element) => {
@@ -137,16 +142,16 @@ export default function Dashboard() {
               );
 
               if (result) {
-                ToastSuccess(<p>You have added the Audio <span style={{fontWeight: "bold"}}>{newAudioName}</span> to the roster with a price of <span style={{fontWeight: "bold"}}>{newAudioPrice}</span>.</p>)
+                ToastSuccess(<p>You have added the Audio <span style={BoldSuccessStyle}>{newAudioName}</span> to the roster with a price of <span style={BoldSuccessStyle}>{newAudioPrice}</span>.</p>)
               } else {
                 ToastError(<p>Failed to upload the new Audio... Perhaps it already exists?</p>)
               }
             }}>{selectedFile !== null ? `Add "${selectedFile.name}" to the roster` : "None Selected"}</button>
           </AdditionContainer>
         </Container>
-        <ToastContainer 
+        <ToastContainer
           position="bottom-center" 
-          bodyStyle={{color: "#fff"}} 
+          bodyStyle={{color: "#fff"}}
           hideProgressBar={true} 
           autoClose={3000}
         />

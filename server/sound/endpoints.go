@@ -18,21 +18,37 @@ func checkAndCreatePath() {
 	}
 }
 
-func HandleNewSound(server *gin.Engine, application *app.Application) {
-	server.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
+func WithCORSAndRecovery(engine *gin.Engine) *gin.Engine {
+	engine.Use(
+		func(ctx *gin.Context) {
+			ctx.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+			ctx.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+			ctx.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET")
 
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
+			if ctx.Request.Method == "OPTIONS" {
+				ctx.AbortWithStatus(204)
+				return
+			}
+
+			ctx.Next()
+		},
+		gin.Recovery(),
+	)
+	return engine
+}
+
+func (r *DeploymentCover) Handler(engine *gin.Engine) {
+	engine.GET("/sound/deployment", func(ctx *gin.Context) {
+		socket, err := r.upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
+		if err != nil {
+			panic(err)
 		}
-		c.Next()
+		r.clients[socket] = true
 	})
+}
 
-	server.POST("/sound/upload", func(ctx *gin.Context) {
+func UploadHandler(engine *gin.Engine, application *app.Application) {
+	engine.POST("/sound/upload", func(ctx *gin.Context) {
 		price := ctx.Query("price")
 		if price == "" {
 			ctx.String(http.StatusBadRequest, "missing price")
