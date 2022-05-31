@@ -5,6 +5,7 @@ import Deployments from './Deployments';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import NotFound from './NotFound';
+import Dashboard from './dashboard/Dashboard';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -12,6 +13,7 @@ const root = ReactDOM.createRoot(
 root.render(
   <BrowserRouter>
     <Routes>
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/sound-deployments" element={<Deployments />} />
       <Route path="/*" element={<NotFound/>} />
     </Routes>

@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/imoliwer/sound-point-twitch-bot/server/app"
 	"github.com/imoliwer/sound-point-twitch-bot/server/command"
 	"github.com/imoliwer/sound-point-twitch-bot/server/model"
@@ -104,8 +106,27 @@ func main() {
 	deploymentServer := sound.NewServer(0, 2048)
 	deploymentServer.Listen(":9999")
 
-	util.Log("Sound Deployment", "Listener started.")
+	util.Log("Sound Deployment", "Server started.")
 	defer deploymentServer.Stop()
+
+	// set up the dashboard channel(s)
+	// TODO: clean up all servers to only run on ONE 'gin' engine on separate endpoints
+	dashboardHandler := gin.Default()
+	sound.HandleNewSound(dashboardHandler, &application)
+
+	dashboardServer := &http.Server{
+		Addr:    ":9998",
+		Handler: dashboardHandler,
+	}
+
+	go func() {
+		if err := dashboardServer.ListenAndServe(); err != nil {
+			panic(err)
+		}
+	}()
+
+	util.Log("Sound Dashboard Receiver", "Server started.")
+	defer dashboardServer.Close()
 
 	{ // set up the twitch irc
 		twitchChannelToJoin := settings.TwitchBot.Channel

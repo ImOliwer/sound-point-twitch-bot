@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { w3cwebsocket as WebSocket } from 'websocket';
+import { TitleDeploy } from './util/TitleDeploy';
 
 interface Deployed {
 
@@ -21,17 +22,17 @@ export default function Deployments() {
     socket.onclose = () => setConnected(false);
   }, []);
 
-  if (!connected) {
-    return (
-      <p style={{ 
-        fontFamily: "Arial, sans-serif", 
-        fontSize: "24px",
-        color: "#E4E4E4"
-      }}>NOT CONNECTED</p>
-    );
-  }
-
   return (
-    <p>what and what not</p>
+    <TitleDeploy title="Deployments">
+      {connected ? (
+        <p>what and what not</p>
+      ) : (
+        <p style={{ 
+          fontFamily: "Arial, sans-serif", 
+          fontSize: "24px",
+          color: "#E4E4E4"
+        }}>NOT CONNECTED</p>
+      )}
+    </TitleDeploy>
   );
 }

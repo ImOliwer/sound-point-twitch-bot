@@ -19,6 +19,14 @@ func Uint64(value string) (uint64, error) {
 	return ui64, err
 }
 
+func ForceUint64(value string) uint64 {
+	val, err := Uint64(value)
+	if err != nil {
+		panic(err)
+	}
+	return val
+}
+
 func Uint32(value string) uint32 {
 	ui64, _ := strconv.ParseUint(value, 10, 32)
 	return uint32(ui64)

@@ -50,9 +50,21 @@ type TempTwitchAccessSettings struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+type AudioReference struct {
+	Price    uint64 `json:"price"`
+	FileName string `json:"file_name"`
+	Cooldown uint64 `json:"cooldown"`
+	LastUsed uint64 `json:"last_used"`
+}
+
+type AudioSettings struct {
+	References map[string]AudioReference `json:"references"`
+}
+
 type Settings struct {
 	TwitchBot       TwitchBotSettings         `json:"twitch_chat_bot"`
 	TwitchAccessory *TempTwitchAccessSettings `json:"twitch_accessories"` // temporary
+	Audio           AudioSettings
 }
 
 func (r *Settings) Save() {
@@ -115,6 +127,9 @@ func ReadSettings() *Settings {
 		"client_secret": "<your_client_secret>",
 		"auth_token": "<your_auth_token>",
 		"refresh_token": "<your_refresh_token>",
+	},
+	"audio": {
+		"references": {}
 	}
 }`)
 		created.Write(settingsContent)
