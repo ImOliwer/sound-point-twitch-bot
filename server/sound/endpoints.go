@@ -105,12 +105,18 @@ func UploadHandler(engine *gin.Engine, application *app.Application) {
 
 		file, err := ctx.FormFile("file")
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, "failed fetching audio file")
+			ctx.String(http.StatusBadRequest, "no audio file provided")
+			return
+		}
+
+		filePath := fmt.Sprintf("web/public/sounds/%s", file.Filename)
+		if _, err := os.Stat(filePath); os.IsExist(err) {
+			ctx.String(http.StatusBadRequest, "file already exists")
 			return
 		}
 
 		checkAndCreatePath()
-		if err := ctx.SaveUploadedFile(file, fmt.Sprintf("web/public/sounds/%s", file.Filename)); err != nil {
+		if err := ctx.SaveUploadedFile(file, filePath); err != nil {
 			ctx.String(http.StatusInternalServerError, "failed saving file, perhaps it already exists?")
 			return
 		}

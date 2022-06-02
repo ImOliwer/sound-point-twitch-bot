@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import {
-  AdditionContainer,
   ByAuthorContainer,
   Container,
   CooldownInputContainer,
+  CreateSoundContainer,
+  CreateSoundForm,
   InfoContainer,
   SoundTable,
   SoundTableActions,
@@ -17,7 +18,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer, toast } from "react-toastify";
 import Axios, { AxiosResponse } from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faPlay, faTrash, faX } from "@fortawesome/free-solid-svg-icons";
 
 const NUMBER_REGEX = /^\d+$/;
 
@@ -105,9 +106,10 @@ function Actions({
 }
 
 export default function Dashboard() {
+  const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [maxSoundsPage, setMaxSoundsPage] = useState(1); // TODO: update on sound deletion and creation
-  const [soundsPage, setSoundsPage] = useState(1); // TODO: update on sound deletion when it's the last on its page
+  const [maxSoundsPage, setMaxSoundsPage] = useState(1); // TODO: update on sound creation
+  const [soundsPage, setSoundsPage] = useState(1);
   const [sounds, setSounds] = useState<SoundMap>({});
 
   const [newAudioPrice, setNewAudioPrice] = useState("");
@@ -225,87 +227,112 @@ export default function Dashboard() {
               <label onClick={() => changeSoundsPage(soundsPage - 1)}>
                 &#8249;
               </label>
-              <button>Create</button>
+              <button onClick={() => setIsCreating(true)}>Create</button>
               <label onClick={() => changeSoundsPage(soundsPage + 1)}>
                 &#8250;
               </label>
             </SoundTableHelper>
           </SoundTableContainer>
-          {/*<AdditionContainer buttonBackground={selectedFile !== null ? "#5cc769" : "#eb5f5f"}>
-            <input type="file" accept="Audio/mp3" id="choose-sound-to-upload" hidden onChange={element => {
-              const files = element.target.files;
-              if (!files || files.length == 0) {
-                return;
-              }
-
-              // ensure it's an "mp3" audio file
-              const file = files[0];
-              if (!file.name.endsWith("mp3")) {
-                ToastError(<p>The file type must be of <span style={{fontWeight: "bold"}}>MP3</span>.</p>);
-                return;
-              }
-
-              setSelectedFile(file);
-            }}/>
-            <label htmlFor="choose-sound-to-upload">Upload a Sound</label>
-            <InfoContainer>
-              <input type="text" placeholder="Name" onChange={it => setNewAudioName(it.target.value)} />
-              <input type="text" placeholder="Price" onChange={it => setNewAudioPrice(it.target.value)} />
-              <CooldownInputContainer>
-                <input type="text" placeholder="Cooldown" onChange={it => setNewAudioCooldown(it.target.value)} />
-                <select 
-                  name="cooldown-units" 
-                  id="cooldown-units" 
-                  value={newAudioCooldownUnit} 
-                  onChange={it => setNewAudioCooldownUnit(it.target.value)}>
-                  <option value={DAY_UNIT}>Day</option>
-                  <option value={HOUR_UNIT}>Hour</option>
-                  <option value={MINUTE_UNIT}>Minute</option>
-                  <option value={SECOND_UNIT}>Second</option>
-                  <option value={MILLISECOND_UNIT}>Millisecond</option>
-                </select>
-              </CooldownInputContainer>
-            </InfoContainer>
-            <button disabled={selectedFile === null} onClick={async () => {
-              if (selectedFile === null) {
-                ToastError(<p>You must select an Audio file.</p>);
-                return;
-              }
-
-              if (newAudioName == "") {
-                ToastError(<p>Audio name must NOT be empty.</p>);
-                return
-              }
-
-              if (newAudioPrice == "" || !NUMBER_REGEX.test(newAudioPrice)) {
-                ToastError(<p>Audio Price is either invalid or missing - make sure it's a number with no decimals!</p>);
-                return
-              }
-
-              if (newAudioCooldown == "" || !NUMBER_REGEX.test(newAudioCooldown)) {
-                console.log(`'${newAudioCooldown}'`);
-                ToastError(<p>Audio Cooldown is either invalid or missing - make sure it's a number with no decimals!</p>);
-                return;
-              }
-
-              const formData = new FormData();
-              formData.append("file", selectedFile);
-
-              const result = await Upload(
-                parseInt(newAudioPrice), 
-                TranslateUnit(newAudioCooldownUnit, parseInt(newAudioCooldown)), 
-                newAudioName, 
-                formData
-              );
-
-              if (result) {
-                ToastSuccess(<p>You have added the Audio <span style={BoldSuccessStyle}>{newAudioName}</span> to the roster with a price of <span style={BoldSuccessStyle}>{newAudioPrice}</span>.</p>)
-              } else {
-                ToastError(<p>Failed to upload the new Audio... Perhaps it already exists?</p>)
-              }
-            }}>{selectedFile !== null ? `Add "${selectedFile.name}" to the roster` : "None Selected"}</button>
-          </AdditionContainer>*/}
         </Container>
+        <CreateSoundContainer style={{display: isCreating ? "flex" : "none"}}>
+          <CreateSoundForm buttonBackground={selectedFile !== null ? "#5cc769" : "#eb5f5f"}>
+            <header>
+              <div>
+                <FontAwesomeIcon icon={faX} onClick={() => setIsCreating(false)} />
+              </div>
+            </header>
+            <div>
+              <input type="file" accept="Audio/mp3" id="choose-sound-to-upload" hidden onChange={element => {
+                const files = element.target.files;
+                if (!files || files.length == 0) {
+                  return;
+                }
+
+                // ensure it's an "mp3" audio file
+                const file = files[0];
+                if (!file.name.endsWith("mp3")) {
+                  ToastError(<p>The file type must be of <span style={{fontWeight: "bold"}}>MP3</span>.</p>);
+                  return;
+                }
+
+                setSelectedFile(file);
+              }}/>
+              <label htmlFor="choose-sound-to-upload">Click me to select file</label>
+              <InfoContainer>
+                <input type="text" placeholder="Name" onChange={it => setNewAudioName(it.target.value)} />
+                <input type="text" placeholder="Price" onChange={it => setNewAudioPrice(it.target.value)} />
+                <CooldownInputContainer>
+                  <input type="text" placeholder="Cooldown" onChange={it => setNewAudioCooldown(it.target.value)} />
+                  <select 
+                    name="cooldown-units" 
+                    id="cooldown-units" 
+                    value={newAudioCooldownUnit} 
+                    onChange={it => setNewAudioCooldownUnit(it.target.value)}>
+                    <option value={DAY_UNIT}>Day</option>
+                    <option value={HOUR_UNIT}>Hour</option>
+                    <option value={MINUTE_UNIT}>Minute</option>
+                    <option value={SECOND_UNIT}>Second</option>
+                    <option value={MILLISECOND_UNIT}>Millisecond</option>
+                  </select>
+                </CooldownInputContainer>
+              </InfoContainer>
+              <button disabled={selectedFile === null} onClick={async () => {
+                if (selectedFile === null) {
+                  ToastError(<p>You must select an Audio file.</p>);
+                  return;
+                }
+
+                if (newAudioName == "") {
+                  ToastError(<p>Audio name must NOT be empty.</p>);
+                  return
+                }
+
+                if (newAudioPrice == "" || !NUMBER_REGEX.test(newAudioPrice)) {
+                  ToastError(<p>Audio Price is either invalid or missing - make sure it's a number with no decimals!</p>);
+                  return
+                }
+
+                if (newAudioCooldown == "" || !NUMBER_REGEX.test(newAudioCooldown)) {
+                  console.log(`'${newAudioCooldown}'`);
+                  ToastError(<p>Audio Cooldown is either invalid or missing - make sure it's a number with no decimals!</p>);
+                  return;
+                }
+
+                const formData = new FormData();
+                formData.append("file", selectedFile);
+
+                const newAudio: Deployed = {
+                  price: parseInt(newAudioPrice),
+                  file_name: selectedFile.name,
+                  cooldown: TranslateUnit(newAudioCooldownUnit, parseInt(newAudioCooldown)),
+                  last_used: 0
+                };
+
+                const result = await Upload(
+                  newAudio.price, 
+                  newAudio.cooldown, 
+                  newAudioName,
+                  formData
+                );
+
+                if (result) {
+                  setSounds((old) => {
+                    const sounds = {
+                      ...old,
+                      [newAudioName]: newAudio,
+                    };
+                    updateMaxSoundsPage(sounds);
+                    return sounds;
+                  });
+                  ToastSuccess(<p>You have added the Audio <span style={BoldSuccessStyle}>{newAudioName}</span> to the roster with a price of <span style={BoldSuccessStyle}>{newAudioPrice}</span>.</p>)
+                } else {
+                  ToastError(<p>Failed to upload the new Audio... Perhaps it already exists?</p>)
+                }
+              }}>{selectedFile !== null ? `Add "${selectedFile.name}" to the roster` : "None Selected"}</button>
+            </div>
+            <footer/>
+          </CreateSoundForm>
+        </CreateSoundContainer>
         <ToastContainer
           position="bottom-center"
           bodyStyle={{ color: "#fff" }}
@@ -316,7 +343,7 @@ export default function Dashboard() {
           <p>Made with</p>
           <img src="https://pbs.twimg.com/media/FQd_mVSWQAQCW3U.jpg" />
           <p>by</p>
-          <a href="https://twitter.com/oliwer_lindell">Oliwer</a>
+          <a href="https://twitter.com/oliwer_lindell" target="_blank" rel="noreferrer">Oliwer</a>
         </ByAuthorContainer>
       </>
     </TitleDeploy>

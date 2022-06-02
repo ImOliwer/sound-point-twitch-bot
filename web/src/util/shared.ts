@@ -11,7 +11,7 @@ export type SoundMap = {
   [key: string]: Deployed;
 };
 
-const fixed_regex = /^-?\d+(?:\.\d{0,1})?/;
+const fixed_regex = /^-?\d+(?:\.\d{0,2})?/;
 
 export function fixed(value: number): string {
   const check = value.toString().match(fixed_regex);
@@ -20,8 +20,6 @@ export function fixed(value: number): string {
   }
   return check[0];
 }
-
-
 
 export function formatNumber(cooldown: number): string {
   const milliseconds = (cooldown % 1000) / 100,

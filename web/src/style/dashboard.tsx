@@ -21,74 +21,6 @@ export const Title = styled.h2`
   margin-bottom: 50px;
 `;
 
-export const AdditionContainer = styled.div<AdditionContainerProps>`
-  width: 22.5%;
-  height: 30%;
-  background: #5f54b9;
-  border-radius: 10px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-
-  & > label {
-    font-size: 16px;
-    color: #F0F0F0;
-    padding-bottom: 3.5px;
-    cursor: pointer;
-    border-bottom: 2px solid #fff;
-    margin-bottom: 15px;
-  }
-
-  & > button {
-    padding: 10px;
-    width: 60%;
-    border: none;
-    outline: none;
-    color: #fff;
-    border-radius: 5px;
-    text-transform: uppercase;
-    font-weight: bold;
-    background: ${props => props.buttonBackground || "#eb5f5f"};
-    margin-top: 15px;
-    cursor: pointer;
-  }
-
-  & > input {
-    outline: none;
-    border: none;
-    padding: 10px;
-    width: 50%;
-  }
-`;
-
-export const InfoContainer = styled.div`
-  width: 60%;
-  display: flex;
-  flex-direction: column;
-
-  & > input {
-    margin-bottom: 5px;
-  }
-`;
-
-export const CooldownInputContainer = styled.div`
-  width: 100%;
-  display: flex;
-
-  & > input {
-    width: 55%;
-    margin-right: 5px;
-  }
-
-  & > select {
-    flex: 1;
-    border-radius: 5px;
-    outline: none;
-    border: none;
-  }
-`;
-
 export const SoundTableContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -230,6 +162,125 @@ export const SoundTableHelper = styled.div`
   & button:hover {
     background: #29df7c;
     transition: ease-in-out .3s background;
+  }
+`;
+
+export const CreateSoundContainer = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.5);
+`;
+
+export const CreateSoundForm = styled.div<AdditionContainerProps>`
+  width: 15%;
+  height: 35%;
+  padding: 15px;
+  background: #e3e3e3;
+  border-radius: 7.5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: column;
+
+  & > header, & > footer {
+    width: 100%;
+    height: 10%;
+  }
+
+  & > header {
+    display: flex;
+    justify-content: end;
+    align-items: center;
+
+    & > div {
+      padding: 7px;
+      width: 16px;
+      background: #c9c9c9;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: ease-in-out .3s background;
+      cursor: pointer;
+
+      &:hover {
+        background: #a1a0a0;
+        transition: ease-in-out .3s background;
+      }
+
+      & > * {
+        width: 10px;
+      }
+    }
+  }
+
+  & > div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+
+    & > label {
+      font-size: 16px;
+      color: #3b3940;
+      padding-bottom: 3.5px;
+      cursor: pointer;
+      border-bottom: 2px solid #3b3940;
+      margin-bottom: 15px;
+    }
+
+    & > button {
+      padding: 10px;
+      width: 75%;
+      border: none;
+      outline: none;
+      color: #fff;
+      border-radius: 5px;
+      text-transform: uppercase;
+      font-weight: bold;
+      background: ${props => props.buttonBackground || "#eb5f5f"};
+      margin-top: 15px;
+      cursor: pointer;
+    }
+
+    & > input {
+      outline: none;
+      border: none;
+      padding: 10px;
+      width: 50%;
+    }
+  }
+`;
+
+export const InfoContainer = styled.div`
+  width: 75%;
+  display: flex;
+  flex-direction: column;
+
+  & > input {
+    margin-bottom: 5px;
+  }
+`;
+
+export const CooldownInputContainer = styled.div`
+  width: 100%;
+  display: flex;
+
+  & > input {
+    width: 55%;
+    margin-right: 5px;
+  }
+
+  & > select {
+    flex: 1;
+    border-radius: 5px;
+    outline: none;
+    border: none;
   }
 `;
 
