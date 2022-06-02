@@ -105,18 +105,30 @@ function Actions({
   );
 }
 
-export default function Dashboard() {
-  const [isCreating, setIsCreating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [maxSoundsPage, setMaxSoundsPage] = useState(1);
-  const [soundsPage, setSoundsPage] = useState(1);
-  const [sounds, setSounds] = useState<SoundMap>({});
+type NewAudioStructure = {
+  price: string;
+  cooldown: string;
+  cooldownUnit: string;
+  name: string;
+  file: File | null;
+};
 
-  const [newAudioPrice, setNewAudioPrice] = useState("");
-  const [newAudioCooldown, setNewAudioCooldown] = useState("");
-  const [newAudioCooldownUnit, setNewAudioCooldownUnit] = useState(SECOND_UNIT);
-  const [newAudioName, setNewAudioName] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+// TODO: set up play action
+export default function Dashboard() {
+  const [isCreating, setIsCreating]       = useState(false);
+  const [isDeleting, setIsDeleting]       = useState(false);
+  const [maxSoundsPage, setMaxSoundsPage] = useState(1);
+  const [soundsPage, setSoundsPage]       = useState(1);
+  const [sounds, setSounds]               = useState<SoundMap>({});
+  const [newAudio, setNewAudio]           = useState<NewAudioStructure>(
+    {
+      price: "",
+      cooldown: "",
+      cooldownUnit: SECOND_UNIT,
+      name: "",
+      file: null
+    }
+  );
 
   useEffect(() => {
     Axios.get("http://localhost:9999/sounds")
@@ -182,6 +194,14 @@ export default function Dashboard() {
       });
   };
 
+  function updateNewAudio(mod: (struct: NewAudioStructure) => void): void {
+    setNewAudio(old => {
+      const newVal: NewAudioStructure = { ...old };
+      mod(newVal);
+      return newVal;
+    });
+  };
+
   return (
     <TitleDeploy title="Dashboard">
       <>
@@ -235,7 +255,7 @@ export default function Dashboard() {
           </SoundTableContainer>
         </Container>
         <CreateSoundContainer style={{display: isCreating ? "flex" : "none"}}>
-          <CreateSoundForm buttonBackground={selectedFile !== null ? "#5cc769" : "#eb5f5f"}>
+          <CreateSoundForm buttonBackground={newAudio.file !== null ? "#5cc769" : "#eb5f5f"}>
             <header>
               <div>
                 <FontAwesomeIcon icon={faX} onClick={() => setIsCreating(false)} />
@@ -255,19 +275,19 @@ export default function Dashboard() {
                   return;
                 }
 
-                setSelectedFile(file);
+                updateNewAudio(it => it.file = file);
               }}/>
               <label htmlFor="choose-sound-to-upload">Click me to select file</label>
               <InfoContainer>
-                <input type="text" placeholder="Name" onChange={it => setNewAudioName(it.target.value)} />
-                <input type="text" placeholder="Price" onChange={it => setNewAudioPrice(it.target.value)} />
+                <input type="text" placeholder="Name" onChange={change => updateNewAudio(it => it.name = change.target.value)} />
+                <input type="text" placeholder="Price" onChange={change => updateNewAudio(it => it.price = change.target.value)} />
                 <CooldownInputContainer>
-                  <input type="text" placeholder="Cooldown" onChange={it => setNewAudioCooldown(it.target.value)} />
+                  <input type="text" placeholder="Cooldown" onChange={change => updateNewAudio(it => it.cooldown = change.target.value)} />
                   <select 
                     name="cooldown-units" 
                     id="cooldown-units" 
-                    value={newAudioCooldownUnit} 
-                    onChange={it => setNewAudioCooldownUnit(it.target.value)}>
+                    value={newAudio.cooldownUnit} 
+                    onChange={change => updateNewAudio(it => it.cooldownUnit = change.target.value)}>
                     <option value={DAY_UNIT}>Day</option>
                     <option value={HOUR_UNIT}>Hour</option>
                     <option value={MINUTE_UNIT}>Minute</option>
@@ -276,22 +296,26 @@ export default function Dashboard() {
                   </select>
                 </CooldownInputContainer>
               </InfoContainer>
-              <button disabled={selectedFile === null} onClick={async () => {
+              <button disabled={newAudio.file === null} onClick={async () => {
+                const selectedFile = newAudio.file;
                 if (selectedFile === null) {
                   ToastError(<p>You must select an Audio file.</p>);
                   return;
                 }
 
+                const newAudioName = newAudio.name;
                 if (newAudioName == "") {
                   ToastError(<p>Audio name must NOT be empty.</p>);
                   return
                 }
 
+                const newAudioPrice = newAudio.price;
                 if (newAudioPrice == "" || !NUMBER_REGEX.test(newAudioPrice)) {
                   ToastError(<p>Audio Price is either invalid or missing - make sure it's a number with no decimals!</p>);
                   return
                 }
 
+                const newAudioCooldown = newAudio.cooldown;
                 if (newAudioCooldown == "" || !NUMBER_REGEX.test(newAudioCooldown)) {
                   console.log(`'${newAudioCooldown}'`);
                   ToastError(<p>Audio Cooldown is either invalid or missing - make sure it's a number with no decimals!</p>);
@@ -301,16 +325,16 @@ export default function Dashboard() {
                 const formData = new FormData();
                 formData.append("file", selectedFile);
 
-                const newAudio: Deployed = {
+                const audio: Deployed = {
                   price: parseInt(newAudioPrice),
                   file_name: selectedFile.name,
-                  cooldown: TranslateUnit(newAudioCooldownUnit, parseInt(newAudioCooldown)),
+                  cooldown: TranslateUnit(newAudio.cooldownUnit, parseInt(newAudioCooldown)),
                   last_used: 0
                 };
 
                 const result = await Upload(
-                  newAudio.price, 
-                  newAudio.cooldown, 
+                  audio.price, 
+                  audio.cooldown, 
                   newAudioName,
                   formData
                 );
@@ -319,7 +343,7 @@ export default function Dashboard() {
                   setSounds((old) => {
                     const sounds = {
                       ...old,
-                      [newAudioName]: newAudio,
+                      [newAudioName]: audio,
                     };
                     updateMaxSoundsPage(sounds);
                     return sounds;
@@ -328,7 +352,7 @@ export default function Dashboard() {
                 } else {
                   ToastError(<p>Failed to upload the new Audio... Perhaps it already exists?</p>)
                 }
-              }}>{selectedFile !== null ? `Add "${selectedFile.name}" to the roster` : "None Selected"}</button>
+              }}>{newAudio.file !== null ? `Add "${newAudio.file.name}" to the roster` : "None Selected"}</button>
             </div>
             <footer/>
           </CreateSoundForm>
