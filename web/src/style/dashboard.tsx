@@ -15,7 +15,6 @@ export const Container = styled.div`
 `;
 
 export const Title = styled.h2`
-  font-family: Arial, sans-serif;
   font-weight: bold;
   font-size: 36px;
   color: #f0f0f0;
@@ -33,7 +32,6 @@ export const AdditionContainer = styled.div<AdditionContainerProps>`
   flex-direction: column;
 
   & > label {
-    font-family: Arial, sans-serif;
     font-size: 16px;
     color: #F0F0F0;
     padding-bottom: 3.5px;
@@ -50,7 +48,6 @@ export const AdditionContainer = styled.div<AdditionContainerProps>`
     color: #fff;
     border-radius: 5px;
     text-transform: uppercase;
-    font-family: Arial;
     font-weight: bold;
     background: ${props => props.buttonBackground || "#eb5f5f"};
     margin-top: 15px;
@@ -89,5 +86,181 @@ export const CooldownInputContainer = styled.div`
     border-radius: 5px;
     outline: none;
     border: none;
+  }
+`;
+
+export const SoundTableContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  background: #17161C;
+  padding: 20px;
+  border-radius: 7.5px;
+`;
+
+export const SoundTable = styled.table`
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  & th {
+    padding: 10px;
+    text-align: start;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 14px;
+    color: #4CDA8D;
+  }
+
+  & th:last-child {
+    text-align: center;
+  }
+
+  & td {
+    padding: 10px;
+    font-size: 15px;
+    color: #ffffff8a;
+  }
+
+  & td:last-child button:not(:last-child) {
+    margin-right: 10px;
+  }
+
+  & th, & td {
+    width: 120px;
+    max-width: 120px;
+  }
+
+  & td:not(:last-child) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & tbody tr:nth-child(odd) {
+    background: rgba(255, 255, 255, 0.01);
+  }
+`;
+
+export const SoundTableActions = styled.div`
+  max-width: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+
+  & button {
+    outline: none;
+    border: none;
+    padding: 7px 10px 7px 10px;
+    border-radius: 50%;
+  }
+
+  & button:first-child {
+    background: #07bc0c;#f13939
+  }
+
+  & button:first-child:hover {
+    background: #1acd1f;
+  }
+
+  & button:last-child {
+    background: #f13939;
+  }
+
+  & button:last-child:hover {
+    background: #f15252;
+  }
+
+  & button:first-child, & button:last-child {
+    color: #fff;
+    cursor: pointer;
+  }
+
+  & button:first-child,
+  & button:last-child,
+  & button:first-child:hover, 
+  & button:last-child:hover {
+    transition: ease-in-out .3s background;
+  }
+`;
+
+export const SoundTableHelper = styled.div`
+  width: 100%;
+  padding-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  & label {
+    padding: 2.5px 10px 2.5px 10px;
+    background: #4e4e6421;
+    color: #4CDA8D;
+    font-size: 18px;
+    border-radius: 50%;
+    text-align: center;
+    cursor: pointer;
+    transition: ease-in-out .3s background;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+     -khtml-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+  }
+
+  & label:hover {
+    background: #4e4e6436;
+    transition: ease-in-out .3s background;
+  }
+
+  & button {
+    height: 100%;
+    padding: 0 15px 0 15px;
+    outline: none;
+    border: none;
+    border-radius: 5px;
+    background: #4CDA8D;
+    color: 2C2839;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: ease-in-out .3s background;
+  }
+
+  & button:hover {
+    background: #29df7c;
+    transition: ease-in-out .3s background;
+  }
+`;
+
+export const ByAuthorContainer = styled.div`
+  position: absolute;
+  top: 97.5%;
+  left: 0.5%;  
+  display: flex;
+  color: rgba(255, 255, 255, 0.4);
+
+  & img {
+    width: 16px;
+    height: 16px;
+    text-align: center;
+  }
+
+  & a {
+    text-decoration: none;
+    color: #4CDA8D;
+    font-weight: semi-bold;
+  }
+
+  & a:focus {
+    color: #4CDA8D !important;
+  }
+
+  & p {
+    margin-right: 5px;
+  }
+
+  & p:not(:first-child) {
+    margin-left: 5px;
   }
 `;

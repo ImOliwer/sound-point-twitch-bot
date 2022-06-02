@@ -107,8 +107,8 @@ func main() {
 		engine := sound.WithCORSAndRecovery(gin.New())
 		deploymentCover := sound.NewCover(0, 2048)
 
-		sound.UploadHandler(engine, &application)
 		deploymentCover.Handler(engine)
+		sound.RegisterAll(engine, &application)
 
 		server := &http.Server{
 			Addr:    ":9999",

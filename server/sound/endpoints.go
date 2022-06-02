@@ -13,8 +13,8 @@ import (
 )
 
 func checkAndCreatePath() {
-	if _, err := os.Stat("audio"); errors.Is(err, os.ErrNotExist) {
-		os.Mkdir("audio", os.ModeDir)
+	if _, err := os.Stat("web/public/sounds"); errors.Is(err, os.ErrNotExist) {
+		os.Mkdir("web/public/sounds", os.ModeDir)
 	}
 }
 
@@ -23,7 +23,7 @@ func WithCORSAndRecovery(engine *gin.Engine) *gin.Engine {
 		func(ctx *gin.Context) {
 			ctx.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 			ctx.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-			ctx.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET")
+			ctx.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, DELETE")
 
 			if ctx.Request.Method == "OPTIONS" {
 				ctx.AbortWithStatus(204)
@@ -47,8 +47,36 @@ func (r *DeploymentCover) Handler(engine *gin.Engine) {
 	})
 }
 
+func AllSoundsHandler(engine *gin.Engine, app *app.Application) {
+	engine.GET("/sounds", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, app.Settings.Audio.References)
+	})
+}
+
+func DeleteHandler(engine *gin.Engine, application *app.Application) {
+	engine.DELETE("/sound/:id", func(ctx *gin.Context) {
+		id := ctx.Param("id")
+		if id == "" {
+			ctx.String(http.StatusBadRequest, "missing id")
+			return
+		}
+
+		references := application.Settings.Audio.References
+		audioReference, ok := references[id]
+
+		if !ok {
+			ctx.String(http.StatusBadRequest, "sound was not found")
+			return
+		}
+
+		os.Remove(fmt.Sprintf("web/public/sounds/%s", audioReference.FileName))
+		delete(references, id)
+		ctx.String(http.StatusOK, "sound has been deleted")
+	})
+}
+
 func UploadHandler(engine *gin.Engine, application *app.Application) {
-	engine.POST("/sound/upload", func(ctx *gin.Context) {
+	engine.POST("/sound", func(ctx *gin.Context) {
 		price := ctx.Query("price")
 		if price == "" {
 			ctx.String(http.StatusBadRequest, "missing price")
@@ -82,7 +110,7 @@ func UploadHandler(engine *gin.Engine, application *app.Application) {
 		}
 
 		checkAndCreatePath()
-		if err := ctx.SaveUploadedFile(file, fmt.Sprintf("audio/%s", file.Filename)); err != nil {
+		if err := ctx.SaveUploadedFile(file, fmt.Sprintf("web/public/sounds/%s", file.Filename)); err != nil {
 			ctx.String(http.StatusInternalServerError, "failed saving file, perhaps it already exists?")
 			return
 		}
@@ -94,4 +122,10 @@ func UploadHandler(engine *gin.Engine, application *app.Application) {
 		}
 		ctx.String(http.StatusOK, "uploaded new sound successfully")
 	})
+}
+
+func RegisterAll(engine *gin.Engine, appPtr *app.Application) {
+	AllSoundsHandler(engine, appPtr)
+	UploadHandler(engine, appPtr)
+	DeleteHandler(engine, appPtr)
 }
