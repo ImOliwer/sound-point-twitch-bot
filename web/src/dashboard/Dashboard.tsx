@@ -108,7 +108,7 @@ function Actions({
 export default function Dashboard() {
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [maxSoundsPage, setMaxSoundsPage] = useState(1); // TODO: update on sound creation
+  const [maxSoundsPage, setMaxSoundsPage] = useState(1);
   const [soundsPage, setSoundsPage] = useState(1);
   const [sounds, setSounds] = useState<SoundMap>({});
 
