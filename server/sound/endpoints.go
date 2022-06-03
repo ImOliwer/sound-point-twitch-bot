@@ -130,8 +130,35 @@ func UploadHandler(engine *gin.Engine, application *app.Application) {
 	})
 }
 
-func RegisterAll(engine *gin.Engine, appPtr *app.Application) {
+func TestHandler(engine *gin.Engine, appPtr *app.Application, cover *DeploymentCover) {
+	engine.POST("/sound/test/:id", func(ctx *gin.Context) {
+		id := ctx.Param("id")
+		if id == "" {
+			ctx.String(http.StatusBadRequest, "missing id")
+			return
+		}
+
+		reference, ok := appPtr.Settings.Audio.References[id]
+		if !ok {
+			ctx.String(http.StatusBadRequest, "could not find sound with passed id")
+			return
+		}
+
+		cover.Broadcast(TestDeployment{
+			GlobalDeployment: GlobalDeployment{
+				ID:       id,
+				Price:    reference.Price,
+				FileName: reference.FileName,
+			},
+			Tester: "Broadcaster",
+		})
+		ctx.String(http.StatusOK, "deployed test")
+	})
+}
+
+func RegisterAll(engine *gin.Engine, appPtr *app.Application, cover *DeploymentCover) {
 	AllSoundsHandler(engine, appPtr)
 	UploadHandler(engine, appPtr)
 	DeleteHandler(engine, appPtr)
+	TestHandler(engine, appPtr, cover)
 }

@@ -108,7 +108,7 @@ func main() {
 		deploymentCover := sound.NewCover(0, 2048)
 
 		deploymentCover.Handler(engine)
-		sound.RegisterAll(engine, &application)
+		sound.RegisterAll(engine, &application, deploymentCover)
 
 		server := &http.Server{
 			Addr:    ":9999",

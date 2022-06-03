@@ -113,7 +113,7 @@ type NewAudioStructure = {
   file: File | null;
 };
 
-// TODO: set up play action
+// TODO: set up play action (http://localhost:9999/sound/test/:id - POST)
 export default function Dashboard() {
   const [isCreating, setIsCreating]       = useState(false);
   const [isDeleting, setIsDeleting]       = useState(false);
@@ -194,6 +194,17 @@ export default function Dashboard() {
       });
   };
 
+  const testSound = (id: string) => {
+    Axios
+      .post(`http://localhost:9999/sound/test/${id}`)
+      .catch(() => ToastError(<p>Failed during deployment of test sound. Try refreshing the page.</p>))
+      .then(res => {
+        if (res !== undefined) {
+          ToastSuccess(<p>Successfully deployed test sound of <span style={BoldSuccessStyle}>{id}</span>.</p>)
+        }
+      });
+  };
+
   function updateNewAudio(mod: (struct: NewAudioStructure) => void): void {
     setNewAudio(old => {
       const newVal: NewAudioStructure = { ...old };
@@ -233,7 +244,7 @@ export default function Dashboard() {
                       <td>
                         <SoundTableActions>
                           <Actions
-                            onPlay={() => console.log(`playing ${key}`)}
+                            onPlay={() => testSound(key)}
                             onDelete={() => deleteSound(key)}
                           />
                         </SoundTableActions>

@@ -7,10 +7,20 @@ import (
 	"github.com/imoliwer/sound-point-twitch-bot/server/twitch_irc"
 )
 
-type SoundDeployment struct {
+type GlobalDeployment struct {
+	Price    uint64 `json:"price"`
+	ID       string `json:"id"`
+	FileName string `json:"file_name"`
+}
+
+type RealDeployment struct {
+	GlobalDeployment
 	State *twitch_irc.UserState `json:"userstate"`
-	Price uint64                `json:"price"`
-	Id    string                `json:"id"`
+}
+
+type TestDeployment struct {
+	GlobalDeployment
+	Tester string `json:"tester"`
 }
 
 type DeploymentCover struct {
@@ -29,7 +39,7 @@ func NewCover(readBuffer int, writebuffer int) *DeploymentCover {
 	}
 }
 
-func (r *DeploymentCover) Broadcast(obj SoundDeployment) {
+func (r *DeploymentCover) Broadcast(obj interface{}) {
 	for client := range r.clients {
 		client.WriteJSON(obj)
 	}
