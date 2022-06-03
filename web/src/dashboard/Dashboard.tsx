@@ -113,7 +113,6 @@ type NewAudioStructure = {
   file: File | null;
 };
 
-// TODO: set up play action (http://localhost:9999/sound/test/:id - POST)
 export default function Dashboard() {
   const [isCreating, setIsCreating]       = useState(false);
   const [isDeleting, setIsDeleting]       = useState(false);
