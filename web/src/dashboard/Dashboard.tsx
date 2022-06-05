@@ -6,6 +6,8 @@ import {
   CreateSoundContainer,
   CreateSoundForm,
   InfoContainer,
+  OfflineBucket,
+  OfflineContainer,
   SoundTable,
   SoundTableActions,
   SoundTableContainer,
@@ -114,12 +116,13 @@ type NewAudioStructure = {
 };
 
 export default function Dashboard() {
-  const [isCreating, setIsCreating]       = useState(false);
-  const [isDeleting, setIsDeleting]       = useState(false);
-  const [maxSoundsPage, setMaxSoundsPage] = useState(1);
-  const [soundsPage, setSoundsPage]       = useState(1);
-  const [sounds, setSounds]               = useState<SoundMap>({});
-  const [newAudio, setNewAudio]           = useState<NewAudioStructure>(
+  const [isServerStarted, setServerStarted] = useState<boolean>();
+  const [isCreating, setIsCreating]         = useState(false);
+  const [isDeleting, setIsDeleting]         = useState(false);
+  const [maxSoundsPage, setMaxSoundsPage]   = useState(1);
+  const [soundsPage, setSoundsPage]         = useState(1);
+  const [sounds, setSounds]                 = useState<SoundMap>({});
+  const [newAudio, setNewAudio]             = useState<NewAudioStructure>(
     {
       price: "",
       cooldown: "",
@@ -130,15 +133,24 @@ export default function Dashboard() {
   );
 
   useEffect(() => {
-    Axios.get("http://localhost:9999/sounds")
-      .catch(console.log)
+    Axios
+      .get("http://localhost:9999/sounds", {
+        timeout: 1_000,
+      })
+      .catch(() => setServerStarted(false))
       .then((it) => {
+        if (it === undefined || it.data === undefined) {
+          setServerStarted(false);
+          return;
+        }
+
         const response = it as AxiosResponse<any, any>;
         setSounds((old) => {
           const sounds = { ...old, ...response.data };
           updateMaxSoundsPage(sounds);
           return sounds;
         });
+        setServerStarted(true);
       });
   }, []);
 
@@ -211,6 +223,25 @@ export default function Dashboard() {
       return newVal;
     });
   };
+
+  if (isServerStarted === undefined) {
+    return <div style={{width: "100%", height: "100vh", background: "#26262a"}}></div>;
+  }
+
+  if (isServerStarted === false) {
+    return (
+      <OfflineContainer>
+        <OfflineBucket>
+          <h3>COULD NOT CONNECT TO SERVER</h3>
+          <div>
+            <p>Start the server up, come back and then refresh the page.</p>
+            <p>Issues starting the server? Contact us for further assistance.</p>
+          </div>
+          <button onClick={() => window.location.reload()}>Refresh Page</button>
+        </OfflineBucket>
+      </OfflineContainer>
+    )
+  }
 
   return (
     <TitleDeploy title="Dashboard">

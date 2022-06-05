@@ -315,3 +315,55 @@ export const ByAuthorContainer = styled.div`
     margin-left: 5px;
   }
 `;
+
+export const OfflineContainer = styled.div`
+  width: 100%;
+  height: 100vh;
+  background: #26262a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+export const OfflineBucket = styled.div`
+  width: 25%;
+  height: 15%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #ff5656;
+  border: 2px solid #ff4141;
+  border-radius: 7px;
+
+  & h3, & p {
+    color: white;
+    font-family: Roboto, sans-serif;
+  }
+
+  & div {
+    text-align: center;
+  }
+
+  & button {
+    outline: none;
+    border: none;
+    padding: 10px;
+    width: 100%;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.75);
+    font-family: Roboto, sans-serif;
+    font-weight: bold;
+    font-size: 14px;
+    text-transform: uppercase;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: linear .15s all;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.8);
+      transition: linear .15s all;
+    }
+  }
+`;
