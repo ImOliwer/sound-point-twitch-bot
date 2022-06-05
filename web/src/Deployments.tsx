@@ -44,21 +44,20 @@ export default function Deployments() {
     child.innerHTML = alertContent
       .replaceAll("{{deployer}}", next.state ? next.state["display-name"] : next.tester)
       .replaceAll("{{id}}", next.file_name); // TODO: fetch name instead of file name for this
-    
-    deploymentStart(child).then(() => {
+
+    window["deploymentStart"](alertContainer, child).then(() => {
       const audio = new Audio(`sounds/${next.file_name}`);
       audio.load();
       audio.loop = false;
       audio.onended = () => { 
         audio.remove();
-        deploymentEnd(child).then(() => {
+        window["deploymentEnd"](alertContainer, child).then(() => {
           child.remove();
           isPlaying = false;
         });
       };
       audio.play();
     });
-    //alertContainer.appendChild(child);
   };
 
   useEffect(() => {
