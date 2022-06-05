@@ -81,6 +81,7 @@ func NewPointsCommand() PrimaryCommand {
 				Requirements: modRequirements,
 				Execute:      points_set,
 			},
+			// TODO: set up the redeem command
 		},
 	}
 }

@@ -102,10 +102,10 @@ func main() {
 		}
 	}
 
+	deploymentCover := sound.NewCover(0, 2048)
 	{ // set up the main server
 		gin.SetMode(gin.ReleaseMode)
 		engine := sound.WithCORSAndRecovery(gin.New())
-		deploymentCover := sound.NewCover(0, 2048)
 
 		deploymentCover.Handler(engine)
 		sound.RegisterAll(engine, &application, deploymentCover)

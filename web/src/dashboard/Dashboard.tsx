@@ -368,6 +368,7 @@ export default function Dashboard() {
 
                 const audio: Deployed = {
                   price: parseInt(newAudioPrice),
+                  id: newAudioName,
                   file_name: selectedFile.name,
                   cooldown: TranslateUnit(newAudio.cooldownUnit, parseInt(newAudioCooldown)),
                   last_used: 0
@@ -384,7 +385,7 @@ export default function Dashboard() {
                   setSounds((old) => {
                     const sounds = {
                       ...old,
-                      [newAudioName]: audio,
+                      [audio.id]: audio,
                     };
                     updateMaxSoundsPage(sounds);
                     return sounds;

@@ -2,6 +2,7 @@ export const TitleBase = "Sound Point Twitch Bot |";
 
 export type Deployed = {
   price: number;
+  id: string;
   file_name: string;
   cooldown: number;
   last_used: number;

@@ -9,11 +9,28 @@ type UserState = {
 };
 
 type Deployment = Deployed & {
-  state?: UserState;
+  userstate?: UserState;
   tester?: string;
 };
 
-// TODO: set up the layout box for deployments
+function processInnerAlert(content: string, next: Deployment): string {
+  const [real, test] = content.split("<< OR ELSE IF TEST >>");
+  let it;
+  const userState = next.userstate;
+
+  if (userState !== undefined) {
+    let c = real;
+    for (const key of Object.keys(userState)) {
+      c = c.replaceAll(`{{${key}}}`, userState[key]);
+    }
+    it = c;
+  } else it = test;
+
+  return it
+    .replaceAll("{{id}}", next.id)
+    .replaceAll("{{price}}", next.price.toString());
+}
+
 export default function Deployments() {
   const [connected, setConnected] = useState(false);
 
@@ -33,17 +50,15 @@ export default function Deployments() {
       return;
     }
 
-    const alertContainer = document.getElementById("alertContainer");
+    const alertContainer = document.getElementById("alert-container");
     if (!alertContainer) {
       isPlaying = false;
       return;
     }
     
     const child = document.createElement("div");
-    child.id = "alert-main";
-    child.innerHTML = alertContent
-      .replaceAll("{{deployer}}", next.state ? next.state["display-name"] : next.tester)
-      .replaceAll("{{id}}", next.file_name); // TODO: fetch name instead of file name for this
+    child.id = "alert-hover";
+    child.innerHTML = processInnerAlert(alertContent, next);
 
     window["deploymentStart"](alertContainer, child).then(() => {
       const audio = new Audio(`sounds/${next.file_name}`);
@@ -91,7 +106,7 @@ export default function Deployments() {
       if (obj === undefined || !obj.file_name) {
         return;
       }
-      
+
       queue.push(obj);
     };
 
@@ -102,7 +117,7 @@ export default function Deployments() {
     <TitleDeploy title="Deployments">
       {connected ? (
         <div 
-          id="alertContainer" 
+          id="alert-container" 
           style={{
             display: "flex", 
             width: "100%", 

@@ -1,0 +1,21 @@
+#alert-container {
+  align-items: flex-start;
+  justify-content: end;
+}
+
+#alert-hover {
+  position: relative;
+  max-width: 500px;
+  right: -550px;
+  display: flex;
+  margin: 10px 10px 0 0;
+  padding: 15px;
+  background: rgb(192, 135, 50);
+  border-radius: 7px;
+}
+
+#alert-hover > p {
+  color: #fff;
+  font-family: Arial;
+  font-weight: 500;
+}
